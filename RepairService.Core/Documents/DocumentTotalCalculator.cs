@@ -9,6 +9,26 @@ namespace RepairService.Core.Documents;
 public static class DocumentTotalCalculator
 {
     /// <summary>
+    /// Обчислює підсумок заявки й наступний стан за запитом.
+    /// </summary>
+    /// <param name="request">Запит на розрахунок.</param>
+    /// <returns>Підсумок до сплати та стан заявки після розрахунку.</returns>
+    public static TotalResult Calculate(TotalRequest request)
+    {
+        DocumentGuards.EnsureRequestValid(request);
+        decimal total = SubtotalOf(request.Lines);
+        total -= ClientDiscountOf(total, request.Client.IsRegular);
+        total -= VolumeDiscountOf(total);
+        total -= CouponDiscountOf(total, request.CouponCode);
+        total -= WeekendDiscountOf(total, request.CreatedAt);
+        total += DeliveryFeeOf(total, request.DeliveryPrice);
+        total = request.Status == RepairStatus.Cancelled
+            ? 0m
+            : Math.Round(Math.Max(total, 0m), 2);
+        return new TotalResult(total, NextStatusOf(request.Status, total));
+    }
+
+    /// <summary>
     /// Обчислює суму рядків заявки з урахуванням гуртової знижки.
     /// </summary>
     /// <param name="lines">Рядки заявки.</param>
