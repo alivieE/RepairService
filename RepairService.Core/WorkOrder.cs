@@ -1,7 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-
 namespace RepairService.Core;
 
 /// <summary>
@@ -10,9 +6,46 @@ namespace RepairService.Core;
 /// </summary>
 public class WorkOrder
 {
-    private readonly List<string[]> _lines = new List<string[]>();
+    /// <summary>Стан «нова»: наряд щойно створено.</summary>
+    public const int StatusNew = 0;
 
-    // public string prim;   // примітка, поки не треба
+    /// <summary>Стан «погоджена»: клієнт погодив вартість робіт.</summary>
+    public const int StatusApproved = 1;
+
+    /// <summary>Стан «виконана»: роботи завершено.</summary>
+    public const int StatusCompleted = 2;
+
+    /// <summary>Стан «скасована»: наряд скасовано.</summary>
+    public const int StatusCancelled = 3;
+
+    /// <summary>Ставка податку на додану вартість.</summary>
+    private const decimal VatRate = 0.2m;
+
+    /// <summary>Поріг суми для знижки постійному клієнту, грн.</summary>
+    private const decimal RegularDiscountThreshold = 1000m;
+
+    /// <summary>Частка знижки постійному клієнту.</summary>
+    private const decimal RegularDiscountRate = 0.10m;
+
+    /// <summary>Поріг суми для знижки на велике замовлення, грн.</summary>
+    private const decimal LargeOrderThreshold = 5000m;
+
+    /// <summary>Частка знижки на велике замовлення.</summary>
+    private const decimal LargeOrderDiscountRate = 0.15m;
+
+    /// <summary>Кількість рядків, після якої діє гуртова знижка.</summary>
+    private const int BulkLineCount = 10;
+
+    /// <summary>Сума гуртової знижки, грн.</summary>
+    private const decimal BulkDiscountAmount = 100m;
+
+    /// <summary>Найбільша допустима кількість рядків у наряді (не включно).</summary>
+    private const int MaxLineCount = 100;
+
+    /// <summary>Найкоротше допустиме ім’я клієнта, символів.</summary>
+    private const int MinCustomerNameLength = 3;
+
+    private readonly List<string[]> _lines = new List<string[]>();
 
     /// <summary>
     /// Створює новий наряд на ремонт у стані «нова».
@@ -33,7 +66,8 @@ public class WorkOrder
     public string CustomerName { get; private set; }
 
     /// <summary>
-    /// Поточний стан наряду: 0 — нова, 1 — погоджена, 2 — виконана, 3 — скасована.
+    /// Поточний стан наряду: одна з констант StatusNew, StatusApproved,
+    /// StatusCompleted, StatusCancelled.
     /// </summary>
     public int Status { get; private set; }
 
@@ -88,29 +122,24 @@ public class WorkOrder
         {
             int quantity = int.Parse(_lines[i][1]);
             decimal unitPrice = decimal.Parse(_lines[i][2]);
-            total = total + (quantity * unitPrice);
-            lineCount = lineCount + 1;
+            total += quantity * unitPrice;
+            lineCount++;
         }
 
-        // if (sum1 > 500) { sum1 = sum1 - 50; } // стара знижка
         // знижки не сумуються: знижка постійному клієнту має пріоритет
         // над знижкою за велике замовлення, гуртова знижка діє після них
-        if (isRegularCustomer == true && total > 1000)
+        if (isRegularCustomer && total > RegularDiscountThreshold)
         {
-            total = total * 0.9m;
+            total *= 1m - RegularDiscountRate;
         }
-        else if (total > 5000)
+        else if (total > LargeOrderThreshold)
         {
-            total = total * 0.85m;
-        }
-        else
-        {
-            total = total;
+            total *= 1m - LargeOrderDiscountRate;
         }
 
-        if (lineCount > 10)
+        if (lineCount > BulkLineCount)
         {
-            total = total - 100;
+            total -= BulkDiscountAmount;
         }
 
         if (total < 0)
@@ -119,7 +148,8 @@ public class WorkOrder
         }
 
         // ПДВ нараховується на суму вже після всіх знижок
-        total = total + (total * 0.2m);
+        total += total * VatRate;
+
         return Math.Round(total, 2);
     }
 
@@ -133,21 +163,21 @@ public class WorkOrder
     /// </returns>
     public bool TryChangeStatus(int newStatus)
     {
-        if (Status == 0 && newStatus == 1)
+        if (Status == StatusNew && newStatus == StatusApproved)
         {
-            Status = 1;
+            Status = StatusApproved;
             return true;
         }
 
-        if (Status == 1 && newStatus == 2)
+        if (Status == StatusApproved && newStatus == StatusCompleted)
         {
-            Status = 2;
+            Status = StatusCompleted;
             return true;
         }
 
-        if (Status == 0 && newStatus == 3)
+        if (Status == StatusNew && newStatus == StatusCancelled)
         {
-            Status = 3;
+            Status = StatusCancelled;
             return true;
         }
 
@@ -162,11 +192,11 @@ public class WorkOrder
     {
         if (Id != null && Id != string.Empty
             && CustomerName != null
-            && CustomerName.Length > 2
+            && CustomerName.Length >= MinCustomerNameLength
             && _lines.Count > 0
-            && _lines.Count < 100
-            && Status >= 0
-            && Status <= 3)
+            && _lines.Count < MaxLineCount
+            && Status >= StatusNew
+            && Status <= StatusCancelled)
         {
             return true;
         }
