@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using RepairService.Core.Domain;
 
 RepairRequest request = new()
