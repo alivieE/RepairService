@@ -16,10 +16,10 @@ public class LegacyProcessorTests
         };
         decimal total = LegacyProcessor.Process(
             1, "Іваненко", "i@ex.com", true, lines,
-            new DateOnly(2026, 3, 10), "", "Accepted", false,
-            60m, out string next);
+            new DateOnly(2026, 3, 10), "", RepairStatus.Accepted, false,
+            60m, out RepairStatus next);
         Assert.Equal(1292.70m, total);
-        Assert.Equal("InRepair", next);
+        Assert.Equal(RepairStatus.InRepair, next);
     }
 
     [Fact]
@@ -31,10 +31,10 @@ public class LegacyProcessorTests
         };
         decimal total = LegacyProcessor.Process(
             2, "Петренко", "p@ex.com", false, lines,
-            new DateOnly(2026, 3, 10), "SALE10", "InRepair",
-            false, 60m, out string next);
+            new DateOnly(2026, 3, 10), "SALE10", RepairStatus.InRepair,
+            false, 60m, out RepairStatus next);
         Assert.Equal(420m, total);
-        Assert.Equal("Ready", next);
+        Assert.Equal(RepairStatus.Ready, next);
     }
 
     [Fact]
