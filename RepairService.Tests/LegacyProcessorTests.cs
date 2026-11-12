@@ -1,3 +1,4 @@
+using RepairService.Core.Documents;
 using RepairService.Core.Domain;
 using RepairService.Core.Legacy;
 
@@ -37,13 +38,17 @@ public class LegacyProcessorTests
     }
 
     [Fact]
-    public void Process_NoLines_ReturnsMinusOne()
+    public void Calculate_NoLines_ThrowsArgument()
     {
-        decimal total = LegacyProcessor.Process(
-            3, "Коваль", "k@ex.com", false,
-            new List<RepairLine>(),
-            new DateOnly(2026, 3, 10), "", "Accepted", false,
-            60m, out string next);
-        Assert.Equal(-1m, total);
+        Assert.Throws<ArgumentException>(() =>
+            DocumentGuards.EnsureLinesValid(new List<RepairLine>()));
+    }
+
+    [Fact]
+    public void Calculate_ZeroQuantity_ThrowsRange()
+    {
+        RepairLine line = new() { Code = "WRK-1", Quantity = 0, UnitPrice = 10m };
+        Assert.Throws<ArgumentOutOfRangeException>(
+            () => DocumentGuards.EnsureLineValid(line));
     }
 }
