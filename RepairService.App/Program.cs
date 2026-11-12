@@ -1,8 +1,12 @@
 using System.Text;
 using RepairService.Core;
+using RepairService.Core.Abstractions;
 using RepairService.Core.Documents;
 using RepairService.Core.Domain;
+using RepairService.Core.Pricing;
 using RepairService.Core.Reporting;
+using RepairService.Core.Services;
+using RepairService.Core.Storage;
 
 Console.OutputEncoding = Encoding.UTF8;
 
@@ -20,6 +24,17 @@ TotalRequest request = BuildRequestFromInput();
 TotalResult result = DocumentTotalCalculator.Calculate(request);
 string report = DocumentReport.TextOf(request, result);
 new DocumentReportPrinter(Console.Out).Print(report);
+
+// композиційний корінь: єдине місце, де створюються конкретні реалізації
+InMemoryRepairTicketRepository repository = new();
+IPricingPolicy pricing = new DiscountPricingPolicy(0.05m);
+RepairTicketService service = new(repository, pricing);
+
+RepairTicket ticket = new(1, 100, "Lenovo IdeaPad 5", new DateOnly(2026, 11, 2));
+ticket.AddLine(new RepairWork("WRK-1", 2, 250m));
+service.Place(ticket);
+
+Console.WriteLine($"Сума: {service.TotalOf(ticket):0.00}");
 
 static TotalRequest BuildRequestFromInput()
 {
