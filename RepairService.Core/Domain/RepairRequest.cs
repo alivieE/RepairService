@@ -18,9 +18,11 @@ public sealed class RepairRequest
     public IReadOnlyList<RepairLine> Lines => _lines;
 
     /// <summary>Додає рядок до заявки.</summary>
+    /// <param name="line">Рядок із роботою або запчастиною.</param>
     public void AddLine(RepairLine line) => _lines.Add(line);
 
     /// <summary>Обчислює вартість ремонту.</summary>
+    /// <returns>Сума за всіма рядками заявки.</returns>
     public decimal Total()
     {
         decimal sum = 0m;
