@@ -1,5 +1,6 @@
 using RepairService.Core.Documents;
 using RepairService.Core.Domain;
+using RepairService.Core.Reporting;
 
 namespace RepairService.Tests;
 
@@ -50,6 +51,47 @@ public class DocumentTotalCalculatorTests
         RepairLine line = new() { Code = "WRK-1", Quantity = 0, UnitPrice = 10m };
         Assert.Throws<ArgumentOutOfRangeException>(
             () => DocumentGuards.EnsureLineValid(line));
+    }
+
+    [Fact]
+    public void Calculate_CancelledRequest_ReturnsZero()
+    {
+        TotalRequest request = BuildSampleRequest() with { Status = RepairStatus.Cancelled };
+
+        TotalResult result = DocumentTotalCalculator.Calculate(request);
+
+        Assert.Equal(0m, result.Total);
+        Assert.Equal(RepairStatus.Cancelled, result.Status);
+    }
+
+    [Fact]
+    public void CouponDiscountOf_FixedCouponAboveThreshold_Returns200()
+    {
+        decimal discount = DocumentTotalCalculator.CouponDiscountOf(1500m, "MINUS200");
+
+        Assert.Equal(200m, discount);
+    }
+
+    [Fact]
+    public void TextOf_ContainsTotalLine()
+    {
+        TotalRequest request = BuildSampleRequest();
+        TotalResult result = DocumentTotalCalculator.Calculate(request);
+
+        string text = DocumentReport.TextOf(request, result);
+
+        Assert.Contains("Разом: 1292.70", text);
+    }
+
+    [Fact]
+    public void Print_WritesReportToOutput()
+    {
+        using StringWriter writer = new();
+        DocumentReportPrinter printer = new(writer);
+
+        printer.Print("Разом: 10.00");
+
+        Assert.Contains("10.00", writer.ToString());
     }
 
     private static TotalRequest BuildSampleRequest()
