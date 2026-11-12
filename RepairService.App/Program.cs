@@ -3,6 +3,7 @@ using RepairService.Core;
 using RepairService.Core.Abstractions;
 using RepairService.Core.Documents;
 using RepairService.Core.Domain;
+using RepairService.Core.Notifications;
 using RepairService.Core.Pricing;
 using RepairService.Core.Reporting;
 using RepairService.Core.Services;
@@ -25,16 +26,32 @@ TotalResult result = DocumentTotalCalculator.Calculate(request);
 string report = DocumentReport.TextOf(request, result);
 new DocumentReportPrinter(Console.Out).Print(report);
 
-// композиційний корінь: єдине місце, де створюються конкретні реалізації
+// композиційний корінь: єдине місце, де створюються конкретні реалізації;
+// таблиця відповідності замість ланцюга if за типом клієнта
+Dictionary<string, IPricingPolicy> policies = new()
+{
+    ["regular"] = new DiscountPricingPolicy(0.05m),
+    ["vip"] = new VipPricingPolicy(),
+    ["staff"] = new DiscountPricingPolicy(0.30m),
+};
+string customerType = "regular";
+IPricingPolicy pricing = policies.TryGetValue(customerType, out IPricingPolicy? found)
+    ? found
+    : new StandardPricingPolicy();
+
 InMemoryRepairTicketRepository repository = new();
-IPricingPolicy pricing = new DiscountPricingPolicy(0.05m);
-RepairTicketService service = new(repository, pricing);
+INotifier notifier = new TextWriterNotifier(Console.Out);
+RepairTicketService service = new(repository, pricing, notifier);
 
 RepairTicket ticket = new(1, 100, "Lenovo IdeaPad 5", new DateOnly(2026, 11, 2));
 ticket.AddLine(new RepairWork("WRK-1", 2, 250m));
 service.Place(ticket);
 
 Console.WriteLine($"Сума: {service.TotalOf(ticket):0.00}");
+Console.Write(RepairTicketCsvReport.BuildCsv(repository.GetAll(), service.TotalOf));
+
+ArchivedRepairTicket archived = new(ticket, new DateOnly(2026, 11, 13));
+Console.WriteLine($"В архіві: квитанція № {archived.Id}, позицій {archived.Lines.Count}");
 
 static TotalRequest BuildRequestFromInput()
 {
