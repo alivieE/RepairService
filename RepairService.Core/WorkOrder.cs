@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace RepairService.Core;
 
 /// <summary>
@@ -103,8 +105,8 @@ public class WorkOrder
     {
         string[] line = new string[3];
         line[0] = workCode;
-        line[1] = quantity.ToString();
-        line[2] = unitPrice.ToString();
+        line[1] = quantity.ToString(CultureInfo.CurrentCulture);
+        line[2] = unitPrice.ToString(CultureInfo.CurrentCulture);
         _lines.Add(line);
     }
 
@@ -120,8 +122,8 @@ public class WorkOrder
         int lineCount = 0;
         for (int i = 0; i < _lines.Count; i++)
         {
-            int quantity = int.Parse(_lines[i][1]);
-            decimal unitPrice = decimal.Parse(_lines[i][2]);
+            int quantity = int.Parse(_lines[i][1], CultureInfo.CurrentCulture);
+            decimal unitPrice = decimal.Parse(_lines[i][2], CultureInfo.CurrentCulture);
             total += quantity * unitPrice;
             lineCount++;
         }
@@ -213,10 +215,12 @@ public class WorkOrder
         string report = string.Empty;
         for (int i = 0; i < _lines.Count; i++)
         {
+            int quantity = int.Parse(_lines[i][1], CultureInfo.CurrentCulture);
+            decimal unitPrice = decimal.Parse(_lines[i][2], CultureInfo.CurrentCulture);
             report = report + "Робота: " + _lines[i][0]
                 + "; кількість: " + _lines[i][1]
                 + "; ціна: " + _lines[i][2]
-                + "; сума: " + (int.Parse(_lines[i][1]) * decimal.Parse(_lines[i][2]))
+                + "; сума: " + (quantity * unitPrice)
                 + "\n";
         }
 
