@@ -3,12 +3,12 @@ using RepairService.Core;
 
 Console.OutputEncoding = Encoding.UTF8;
 
-var z = new zayavka("R-1001", "Іваненко");
-z.Add("WRK-1", 3, 250m);
-z.Add("WRK-2", 12, 90m);
+var workOrder = new WorkOrder("R-1001", "Іваненко");
+workOrder.AddLine("WRK-1", 3, 250m);
+workOrder.AddLine("WRK-2", 12, 90m);
 
-Console.WriteLine(z.ProcessData(false));
-Console.WriteLine(z.ProcessData(true));
-Console.WriteLine(z.Ck());
-Console.WriteLine(z.Chg(1));
-Console.Write(z.Rep());
+Console.WriteLine(workOrder.CalculateTotal(false));
+Console.WriteLine(workOrder.CalculateTotal(true));
+Console.WriteLine(workOrder.IsValid());
+Console.WriteLine(workOrder.TryChangeStatus(1));
+Console.Write(workOrder.BuildReport());
