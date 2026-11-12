@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RepairService.Core", "Repai
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RepairService.App", "RepairService.App\RepairService.App.csproj", "{56CA1DCA-089D-4C89-B6CC-1E52D5271EF4}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RepairService.Tests", "RepairService.Tests\RepairService.Tests.csproj", "{AE8BEB6A-9C3F-4E41-9977-B1B85766D792}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -24,5 +26,9 @@ Global
 		{56CA1DCA-089D-4C89-B6CC-1E52D5271EF4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{56CA1DCA-089D-4C89-B6CC-1E52D5271EF4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{56CA1DCA-089D-4C89-B6CC-1E52D5271EF4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AE8BEB6A-9C3F-4E41-9977-B1B85766D792}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AE8BEB6A-9C3F-4E41-9977-B1B85766D792}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AE8BEB6A-9C3F-4E41-9977-B1B85766D792}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AE8BEB6A-9C3F-4E41-9977-B1B85766D792}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
