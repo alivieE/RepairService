@@ -1,31 +1,14 @@
-using System.Globalization;
-using RepairService.Core.Domain;
+using System.Text;
+using RepairService.Core;
 
-RepairRequest request = new()
-{
-    Id = 1,
-    ClientId = 10,
-    DeviceModel = "Lenovo IdeaPad 5",
-    CreatedAt = DateTimeOffset.Now,
-};
+Console.OutputEncoding = Encoding.UTF8;
 
-request.AddLine(new RepairLine
-{
-    Code = "WRK-001",
-    Quantity = 1,
-    UnitPrice = 450.00m,
-});
-request.AddLine(new RepairLine
-{
-    Code = "PRT-014",
-    Quantity = 2,
-    UnitPrice = 320.50m,
-});
+var z = new zayavka("R-1001", "Іваненко");
+z.Add("WRK-1", 3, 250m);
+z.Add("WRK-2", 12, 90m);
 
-string total = request.Total()
-    .ToString("F2", CultureInfo.InvariantCulture);
-Console.WriteLine($"Заявка #{request.Id}");
-Console.WriteLine($"Пристрій: {request.DeviceModel}");
-Console.WriteLine($"Стан: {request.Status}");
-Console.WriteLine($"Позицій: {request.Lines.Count}");
-Console.WriteLine($"Сума: {total}");
+Console.WriteLine(z.ProcessData(false));
+Console.WriteLine(z.ProcessData(true));
+Console.WriteLine(z.Ck());
+Console.WriteLine(z.Chg(1));
+Console.Write(z.Rep());
