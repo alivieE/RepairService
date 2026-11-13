@@ -112,7 +112,7 @@ public class LegacyCharacterizationTests
         int years = DateTime.Now.Year - 2020;
         string expected = "ІВАН [VIP] [ЛОЯЛЬНИЙ] <ivan@mail.com> стаж " + years;
 
-        string actual = new LegacyTicketProcessor().DescribeClient(client);
+        string actual = client.Describe();
 
         Assert.Equal(expected, actual);
     }
