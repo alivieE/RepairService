@@ -1,70 +1,91 @@
 using System.Text;
-using RepairService.Core;
+using RepairService.App.Input;
 using RepairService.Core.Abstractions;
-using RepairService.Core.Documents;
 using RepairService.Core.Domain;
+using RepairService.Core.Errors;
 using RepairService.Core.Notifications;
 using RepairService.Core.Pricing;
-using RepairService.Core.Reporting;
 using RepairService.Core.Services;
 using RepairService.Core.Storage;
 
 Console.OutputEncoding = Encoding.UTF8;
 
-var workOrder = new WorkOrder("R-1001", "Іваненко");
-workOrder.AddLine("WRK-1", 3, 250m);
-workOrder.AddLine("WRK-2", 12, 90m);
-
-Console.WriteLine(workOrder.CalculateTotal(false));
-Console.WriteLine(workOrder.CalculateTotal(true));
-Console.WriteLine(workOrder.IsValid());
-Console.WriteLine(workOrder.TryChangeStatus(1));
-Console.Write(workOrder.BuildReport());
-
-TotalRequest request = BuildRequestFromInput();
-TotalResult result = DocumentTotalCalculator.Calculate(request);
-string report = DocumentReport.TextOf(request, result);
-new DocumentReportPrinter(Console.Out).Print(report);
-
-// композиційний корінь: єдине місце, де створюються конкретні реалізації;
-// таблиця відповідності замість ланцюга if за типом клієнта
-Dictionary<string, IPricingPolicy> policies = new()
+// верхній обробник: єдине місце, де перехоплюються всі винятки;
+// кожен клас помилок має свій код завершення
+try
 {
-    ["regular"] = new DiscountPricingPolicy(0.05m),
-    ["vip"] = new VipPricingPolicy(),
-    ["staff"] = new DiscountPricingPolicy(0.30m),
-};
-string customerType = "regular";
-IPricingPolicy pricing = policies.TryGetValue(customerType, out IPricingPolicy? found)
-    ? found
-    : new StandardPricingPolicy();
-
-InMemoryRepairTicketRepository repository = new();
-INotifier notifier = new TextWriterNotifier(Console.Out);
-RepairTicketService service = new(repository, pricing, notifier);
-
-RepairTicket ticket = new(1, 100, "Lenovo IdeaPad 5", new DateOnly(2026, 11, 2));
-ticket.AddLine(new RepairWork("WRK-1", 2, 250m));
-service.Place(ticket);
-
-Console.WriteLine($"Сума: {service.TotalOf(ticket):0.00}");
-Console.Write(RepairTicketCsvReport.BuildCsv(repository.GetAll(), service.TotalOf));
-
-ArchivedRepairTicket archived = new(ticket, new DateOnly(2026, 11, 13));
-Console.WriteLine($"В архіві: квитанція № {archived.Id}, позицій {archived.Lines.Count}");
-
-static TotalRequest BuildRequestFromInput()
+    RunApplication();
+    return 0;
+}
+catch (DomainRuleException ex)
 {
-    return new TotalRequest(
-        DocumentId: 1,
-        Client: new ClientInfo("Іваненко", "i@ex.com", true),
-        Lines: new List<RepairLine>
+    Console.WriteLine($"Порушено правило {ex.Rule}: {ex.Message}");
+    return 1;
+}
+catch (IOException ex)
+{
+    Console.WriteLine($"Помилка середовища: {ex.Message}");
+    return 3;
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"Непередбачений збій: {ex}");
+    return 2;
+}
+
+static void RunApplication()
+{
+    // композиційний корінь: єдине місце, де створюються конкретні реалізації
+    Dictionary<string, IPricingPolicy> policies = new()
+    {
+        ["regular"] = new DiscountPricingPolicy(0.05m),
+        ["vip"] = new VipPricingPolicy(),
+        ["staff"] = new DiscountPricingPolicy(0.30m),
+    };
+    string customerType = "regular";
+    IPricingPolicy pricing = policies.TryGetValue(customerType, out IPricingPolicy? found)
+        ? found
+        : new StandardPricingPolicy();
+
+    InMemoryRepairTicketRepository repository = new();
+    INotifier notifier = new TextWriterNotifier(Console.Out);
+    RepairTicketService service = new(repository, pricing, notifier);
+
+    RepairTicket ticket = new(1, 100, "Lenovo IdeaPad 5", new DateOnly(2026, 11, 2));
+    service.Place(ticket);
+
+    RepairWork line = ReadRepairWork();
+
+    service.AddLine(ticket.Id, line);
+    ticket.StartWork();
+    ticket.Complete();
+
+    decimal total = service.TotalOf(ticket);
+    Console.WriteLine($"Сума: {total:0.00}");
+    service.Pay(ticket.Id, total);
+    Console.WriteLine($"Квитанція № {ticket.Id}: стан {ticket.Status}");
+}
+
+// цикл повторного запиту: поки ввід некоректний, пояснюємо помилку й питаємо знову
+static RepairWork ReadRepairWork()
+{
+    while (true)
+    {
+        Result<RepairWork> parsed = RepairWorkParser.Parse(
+            Ask("Код роботи: "),
+            Ask("Кількість: "),
+            Ask("Ціна за одиницю, грн: "));
+        if (parsed.IsSuccess)
         {
-            new() { Code = "WRK-1", Quantity = 12, UnitPrice = 100m },
-            new() { Code = "PRT-2", Quantity = 1, UnitPrice = 250m },
-        },
-        CreatedAt: new DateOnly(2026, 3, 10),
-        CouponCode: null,
-        Status: RepairStatus.Accepted,
-        DeliveryPrice: 60m);
+            return parsed.Value!;
+        }
+
+        Console.WriteLine($"Помилка вводу: {parsed.Error}");
+    }
+}
+
+static string Ask(string prompt)
+{
+    Console.Write(prompt);
+    return Console.ReadLine() ?? throw new EndOfStreamException("Потік введення закрито.");
 }
