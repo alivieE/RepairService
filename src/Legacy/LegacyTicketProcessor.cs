@@ -39,39 +39,13 @@ public class LegacyTicketProcessor
         List<WorkLine>? lines, TicketState state,
         string currency, DateTime createdAt, bool sendMail)
     {
-        if (lines != null)
-        {
-            if (lines.Count > 0)
-            {
-                if (state == TicketState.New || state == TicketState.Paid)
-                {
-                    if (clientMail != null &&
-                        clientMail.Contains("@"))
-                    {
-                        _log.Add("ok " + ticketId);
-                    }
-                    else
-                    {
-                        return "ERR: mail";
-                    }
-                }
-                else
-                {
-                    return "ERR: state";
-                }
-            }
-            else
-            {
-                return "ERR: empty";
-            }
-        }
-        else
-        {
-            return "ERR: null";
-        }
+        string? error = Validate(lines, state, clientMail);
+        if (error != null) return error;
+
+        _log.Add("ok " + ticketId);
 
         _tmpSum = 0m;
-        for (int i = 0; i < lines.Count; i++)
+        for (int i = 0; i < lines!.Count; i++)
         {
             _tmpSum += lines[i].Quantity * lines[i].UnitPrice;
         }
@@ -117,6 +91,16 @@ public class LegacyTicketProcessor
             _log.Add("mail -> " + clientMail);
         }
         return txt;
+    }
+
+    private static string? Validate(
+        List<WorkLine>? lines, TicketState state, string? clientMail)
+    {
+        if (lines is null) return "ERR: null";
+        if (lines.Count == 0) return "ERR: empty";
+        if (state is not (TicketState.New or TicketState.Paid)) return "ERR: state";
+        if (clientMail is null || !clientMail.Contains("@")) return "ERR: mail";
+        return null;
     }
 
     public decimal Preview(ClientKind clientKind, int clientDone,
