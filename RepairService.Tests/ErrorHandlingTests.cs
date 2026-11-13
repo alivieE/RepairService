@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging.Abstractions;
 using RepairService.Core.Domain;
 using RepairService.Core.Errors;
 using RepairService.Core.Notifications;
@@ -42,6 +43,7 @@ public class ErrorHandlingTests
         return new RepairTicketService(
             new InMemoryRepairTicketRepository(),
             new StandardPricingPolicy(),
-            new TextWriterNotifier(TextWriter.Null));
+            new TextWriterNotifier(TextWriter.Null),
+            NullLogger<RepairTicketService>.Instance);
     }
 }

@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using RepairService.Core.Abstractions;
 using RepairService.Core.Domain;
 using RepairService.Core.Errors;
@@ -13,6 +14,7 @@ public sealed class RepairTicketService
     private readonly IRepairTicketRepository _repository;
     private readonly IPricingPolicy _pricing;
     private readonly INotifier _notifier;
+    private readonly ILogger<RepairTicketService> _log;
 
     /// <summary>
     /// Створює сервіс із переданими залежностями.
@@ -20,17 +22,21 @@ public sealed class RepairTicketService
     /// <param name="repository">Сховище квитанцій.</param>
     /// <param name="pricing">Політика ціноутворення.</param>
     /// <param name="notifier">Сповіщувач клієнта.</param>
+    /// <param name="log">Журнал операцій сервісу.</param>
     public RepairTicketService(
         IRepairTicketRepository repository,
         IPricingPolicy pricing,
-        INotifier notifier)
+        INotifier notifier,
+        ILogger<RepairTicketService> log)
     {
         ArgumentNullException.ThrowIfNull(repository);
         ArgumentNullException.ThrowIfNull(pricing);
         ArgumentNullException.ThrowIfNull(notifier);
+        ArgumentNullException.ThrowIfNull(log);
         _repository = repository;
         _pricing = pricing;
         _notifier = notifier;
+        _log = log;
     }
 
     /// <summary>Приймає квитанцію: зберігає її і сповіщає клієнта.</summary>
@@ -38,8 +44,10 @@ public sealed class RepairTicketService
     public void Place(RepairTicket ticket)
     {
         ArgumentNullException.ThrowIfNull(ticket);
+        using IDisposable? scope = _log.BeginScope("Ticket:{TicketId}", ticket.Id);
         _repository.Add(ticket);
         _notifier.Notify($"Квитанцію № {ticket.Id} прийнято в ремонт.");
+        _log.LogInformation("Квитанцію {TicketId} прийнято в ремонт", ticket.Id);
     }
 
     /// <summary>Обчислює вартість квитанції за політикою ціноутворення.</summary>
@@ -66,6 +74,8 @@ public sealed class RepairTicketService
     public void AddLine(int ticketId, RepairWork line)
     {
         ArgumentNullException.ThrowIfNull(line);
+        using IDisposable? scope = _log.BeginScope("Ticket:{TicketId}", ticketId);
+        _log.LogDebug("Додавання позиції {Code} x {Quantity}", line.Code, line.Quantity);
         RepairTicket ticket = Load(ticketId);
         if (ticket.Status != TicketStatus.Received)
         {
@@ -85,6 +95,8 @@ public sealed class RepairTicketService
     /// </exception>
     public void Pay(int ticketId, decimal amount)
     {
+        using IDisposable? scope = _log.BeginScope("Ticket:{TicketId}", ticketId);
+        _log.LogDebug("Початок оплати, сума {Amount}", amount);
         RepairTicket ticket = Load(ticketId);
         if (ticket.Status != TicketStatus.Ready)
         {
@@ -101,7 +113,13 @@ public sealed class RepairTicketService
                 $"Сплачено {amount:0.00} грн, а треба {total:0.00} грн.");
         }
 
+        if (amount > total)
+        {
+            _log.LogWarning("Переплата {Extra} грн", amount - total);
+        }
+
         ticket.Issue();
+        _log.LogInformation("Оплачено {Amount} грн, пристрій видано", amount);
     }
 
     /// <summary>Завантажує квитанцію за номером.</summary>
@@ -125,13 +143,16 @@ public sealed class RepairTicketService
     public void Cancel(int ticketId, string reason)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(reason);
+        using IDisposable? scope = _log.BeginScope("Ticket:{TicketId}", ticketId);
         RepairTicket ticket = Load(ticketId);
         try
         {
             ticket.Reject();
+            _log.LogInformation("Відмова в ремонті, причина: {Reason}", reason);
         }
         catch (InvalidOperationException ex)
         {
+            _log.LogError(ex, "Відмова неможлива у стані {Status}", ticket.Status);
             throw new DomainRuleException(
                 "ticket.cancellable",
                 $"Квитанцію № {ticketId} у стані {ticket.Status} скасувати не можна.",
