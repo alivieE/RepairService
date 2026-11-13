@@ -1,6 +1,6 @@
-using System.Globalization;
 using RepairService.Core.Abstractions;
 using RepairService.Core.Domain;
+using RepairService.Core.Errors;
 
 namespace RepairService.Core.Services;
 
@@ -57,17 +57,27 @@ public sealed class RepairTicketService
         return total;
     }
 
-    /// <summary>Додає позицію до квитанції з рядків, введених у консолі.</summary>
+    /// <summary>Додає перевірену позицію до квитанції.</summary>
     /// <param name="ticketId">Номер квитанції.</param>
-    /// <param name="code">Код роботи.</param>
-    /// <param name="quantity">Кількість рядком.</param>
-    /// <param name="unitPrice">Ціна за одиницю рядком.</param>
-    public void AddLine(int ticketId, string code, string quantity, string unitPrice)
+    /// <param name="line">Позиція, вже розібрана барикадою.</param>
+    /// <exception cref="DomainRuleException">
+    /// Квитанцію не знайдено або вона вже не редагується.
+    /// </exception>
+    public void AddLine(int ticketId, RepairWork line)
     {
-        var ticket = _repository.GetById(ticketId);
-        var count = int.Parse(quantity, CultureInfo.CurrentCulture);
-        var price = decimal.Parse(unitPrice, CultureInfo.CurrentCulture);
-        ticket!.AddLine(new RepairWork(code, count, price));
+        ArgumentNullException.ThrowIfNull(line);
+        RepairTicket ticket = _repository.GetById(ticketId)
+            ?? throw new DomainRuleException(
+                "ticket.exists",
+                $"Квитанцію № {ticketId} не знайдено.");
+        if (ticket.Status != TicketStatus.Received)
+        {
+            throw new DomainRuleException(
+                "ticket.editable",
+                $"Квитанція № {ticketId} у стані {ticket.Status} не редагується.");
+        }
+
+        ticket.AddLine(line);
     }
 
     /// <summary>Оплата при видачі пристрою.</summary>
