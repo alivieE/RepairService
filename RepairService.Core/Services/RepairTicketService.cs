@@ -80,30 +80,34 @@ public sealed class RepairTicketService
         ticket.AddLine(line);
     }
 
-    /// <summary>Оплата при видачі пристрою.</summary>
+    /// <summary>Приймає оплату при видачі пристрою: Ready → Issued.</summary>
     /// <param name="ticketId">Номер квитанції.</param>
     /// <param name="amount">Сплачена сума, грн.</param>
-    /// <returns>0 — успіх, -1 — не знайдено, -2 — не той стан, -3 — недоплата.</returns>
-    public int Pay(int ticketId, decimal amount)
+    /// <exception cref="DomainRuleException">
+    /// Квитанцію не знайдено, її стан не дозволяє оплату або сплачено замало.
+    /// </exception>
+    public void Pay(int ticketId, decimal amount)
     {
-        var ticket = _repository.GetById(ticketId);
-        if (ticket == null)
-        {
-            return -1;
-        }
-
+        RepairTicket ticket = _repository.GetById(ticketId)
+            ?? throw new DomainRuleException(
+                "ticket.exists",
+                $"Квитанцію № {ticketId} не знайдено.");
         if (ticket.Status != TicketStatus.Ready)
         {
-            return -2;
+            throw new DomainRuleException(
+                "ticket.payable",
+                $"Стан {ticket.Status} не дозволяє оплату квитанції № {ticketId}.");
         }
 
-        if (amount < TotalOf(ticket))
+        decimal total = TotalOf(ticket);
+        if (amount < total)
         {
-            return -3;
+            throw new DomainRuleException(
+                "ticket.amount",
+                $"Сплачено {amount:0.00} грн, а треба {total:0.00} грн.");
         }
 
         ticket.Issue();
-        return 0;
     }
 
     /// <summary>Завантажує квитанцію за номером.</summary>
