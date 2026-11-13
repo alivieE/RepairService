@@ -115,33 +115,13 @@ public class LegacyTicketProcessor
     private static decimal ShippingOf(decimal payable) =>
         payable < PricingRules.FreeShipFrom ? PricingRules.ShipCost : 0m;
 
-    public decimal Preview(ClientKind clientKind, int clientDone,
+        public decimal Preview(ClientKind clientKind, int clientDone,
         List<WorkLine> lines)
     {
-        decimal s = 0m;
-        foreach (var it in lines)
-        {
-            s += it.Quantity * it.UnitPrice;
-        }
-        decimal d = 0m;
-        if (clientKind == ClientKind.Vip)
-        {
-            d = s * PricingRules.VipRate;
-            if (d > PricingRules.MaxDiscount) d = PricingRules.MaxDiscount;
-        }
-        else if (clientKind == ClientKind.Staff)
-        {
-            d = s * PricingRules.StaffRate;
-            if (d > PricingRules.MaxDiscount) d = PricingRules.MaxDiscount;
-        }
-        else if (clientDone > PricingRules.LoyalOrders)
-        {
-            d = s * PricingRules.LoyalRate;
-            if (d > PricingRules.MaxDiscount) d = PricingRules.MaxDiscount;
-        }
-        decimal sh = 0m;
-        if (s - d < PricingRules.FreeShipFrom) sh = PricingRules.ShipCost;
-        return s - d + sh;
+        decimal subtotal = Subtotal(lines);
+        decimal discount = DiscountOf(subtotal, clientKind, clientDone);
+        decimal payable = subtotal - discount;
+        return payable + ShippingOf(payable);
     }
 
     public string DescribeClient(Client c)
