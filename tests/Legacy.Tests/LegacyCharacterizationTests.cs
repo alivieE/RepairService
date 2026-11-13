@@ -12,12 +12,12 @@ public class LegacyCharacterizationTests
     }
 
     [Theory]
-    [InlineData(null, "new", "a@b.c", "ERR: null")]
-    [InlineData("empty", "new", "a@b.c", "ERR: empty")]
-    [InlineData("two", "draft", "a@b.c", "ERR: state")]
-    [InlineData("two", "new", "no-mail", "ERR: mail")]
+    [InlineData(null, TicketState.New, "a@b.c", "ERR: null")]
+    [InlineData("empty", TicketState.New, "a@b.c", "ERR: empty")]
+    [InlineData("two", TicketState.Draft, "a@b.c", "ERR: state")]
+    [InlineData("two", TicketState.New, "no-mail", "ERR: mail")]
     public void Handle_BadInput_ReturnsErrorCode(
-        string? kindOfLines, string state, string mail, string expected)
+        string? kindOfLines, TicketState state, string mail, string expected)
     {
         List<WorkLine>? lines = kindOfLines switch
         {
@@ -28,7 +28,7 @@ public class LegacyCharacterizationTests
         var sut = new LegacyTicketProcessor();
 
         string actual = sut.Handle(
-            1001, 7, "Іван", mail, "regular", 0, lines, state, "UAH", new DateTime(2026, 3, 1), false);
+            1001, 7, "Іван", mail, ClientKind.Regular, 0, lines, state, "UAH", new DateTime(2026, 3, 1), false);
 
         Assert.Equal(expected, actual);
     }
@@ -39,7 +39,7 @@ public class LegacyCharacterizationTests
         var sut = new LegacyTicketProcessor();
 
         string report = sut.Handle(
-            1001, 7, "Іван", "a@b.c", "vip", 3, TwoLines(), "new", "UAH", new DateTime(2026, 3, 1), false);
+            1001, 7, "Іван", "a@b.c", ClientKind.Vip, 3, TwoLines(), TicketState.New, "UAH", new DateTime(2026, 3, 1), false);
 
         string expected =
             "Документ #1001\n" +
@@ -53,11 +53,11 @@ public class LegacyCharacterizationTests
     }
 
     [Theory]
-    [InlineData("regular", 0, 760)]
-    [InlineData("vip", 0, 655)]
-    [InlineData("staff", 0, 550)]
-    [InlineData("regular", 11, 725)]
-    public void Preview_ByKind_ReturnsTotal(string kind, int done, decimal expected)
+    [InlineData(ClientKind.Regular, 0, 760)]
+    [InlineData(ClientKind.Vip, 0, 655)]
+    [InlineData(ClientKind.Staff, 0, 550)]
+    [InlineData(ClientKind.Regular, 11, 725)]
+    public void Preview_ByKind_ReturnsTotal(ClientKind kind, int done, decimal expected)
     {
         var sut = new LegacyTicketProcessor();
 
@@ -75,7 +75,7 @@ public class LegacyCharacterizationTests
             new WorkLine { WorkCode = "WRK-9", Quantity = 1, UnitPrice = 1000m },
         };
 
-        decimal total = sut.Preview("regular", 0, lines);
+        decimal total = sut.Preview(ClientKind.Regular, 0, lines);
 
         Assert.Equal(1000m, total);
     }
@@ -89,7 +89,7 @@ public class LegacyCharacterizationTests
             new WorkLine { WorkCode = "WRK-9", Quantity = 2, UnitPrice = 1000m },
         };
 
-        decimal total = sut.Preview("staff", 0, lines);
+        decimal total = sut.Preview(ClientKind.Staff, 0, lines);
 
         Assert.Equal(1500m, total);
     }
@@ -101,7 +101,7 @@ public class LegacyCharacterizationTests
         {
             Name = " іван ",
             Email = "IVAN@MAIL.COM",
-            Kind = "vip",
+            Kind = ClientKind.Vip,
             DoneCount = 12,
             SinceUtc = new DateTime(2020, 1, 1),
         };
