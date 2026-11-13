@@ -27,8 +27,9 @@ public class LegacyCharacterizationTests
         };
         var sut = new LegacyTicketProcessor();
 
-        string actual = sut.Handle(
-            1001, 7, "Іван", mail, ClientKind.Regular, 0, lines, state, "UAH", new DateTime(2026, 3, 1), false);
+        var client = new Client { Id = 7, Name = "Іван", Email = mail, Kind = ClientKind.Regular, DoneCount = 0 };
+
+        string actual = sut.Handle(new TicketRequest(1001, client, lines, state, "UAH", false));
 
         Assert.Equal(expected, actual);
     }
@@ -38,8 +39,9 @@ public class LegacyCharacterizationTests
     {
         var sut = new LegacyTicketProcessor();
 
-        string report = sut.Handle(
-            1001, 7, "Іван", "a@b.c", ClientKind.Vip, 3, TwoLines(), TicketState.New, "UAH", new DateTime(2026, 3, 1), false);
+        var client = new Client { Id = 7, Name = "Іван", Email = "a@b.c", Kind = ClientKind.Vip, DoneCount = 3 };
+
+        string report = sut.Handle(new TicketRequest(1001, client, TwoLines(), TicketState.New, "UAH", false));
 
         string expected =
             "Документ #1001\n" +
@@ -61,7 +63,7 @@ public class LegacyCharacterizationTests
     {
         var sut = new LegacyTicketProcessor();
 
-        decimal total = sut.Preview(kind, done, TwoLines());
+        decimal total = sut.Preview(new Client { Kind = kind, DoneCount = done }, TwoLines());
 
         Assert.Equal(expected, total);
     }
@@ -75,7 +77,7 @@ public class LegacyCharacterizationTests
             new WorkLine { WorkCode = "WRK-9", Quantity = 1, UnitPrice = 1000m },
         };
 
-        decimal total = sut.Preview(ClientKind.Regular, 0, lines);
+        decimal total = sut.Preview(new Client { Kind = ClientKind.Regular }, lines);
 
         Assert.Equal(1000m, total);
     }
@@ -89,7 +91,7 @@ public class LegacyCharacterizationTests
             new WorkLine { WorkCode = "WRK-9", Quantity = 2, UnitPrice = 1000m },
         };
 
-        decimal total = sut.Preview(ClientKind.Staff, 0, lines);
+        decimal total = sut.Preview(new Client { Kind = ClientKind.Staff }, lines);
 
         Assert.Equal(1500m, total);
     }

@@ -33,55 +33,50 @@ public class LegacyTicketProcessor
     private decimal _tmpDiscount;
     private readonly List<string> _log = new();
 
-    public string Handle(int ticketId, int clientId,
-        string clientName, string? clientMail,
-        ClientKind clientKind, int clientDone,
-        List<WorkLine>? lines, TicketState state,
-        string currency, DateTime createdAt, bool sendMail)
+    public string Handle(TicketRequest req)
     {
-        string? error = Validate(lines, state, clientMail);
+        string? error = Validate(req);
         if (error != null) return error;
 
-        _log.Add("ok " + ticketId);
+        _log.Add("ok " + req.TicketId);
 
-        _tmpSum = Subtotal(lines!);
-        _tmpDiscount = DiscountOf(_tmpSum, clientKind, clientDone);
+        _tmpSum = Subtotal(req.Lines!);
+        _tmpDiscount = DiscountOf(_tmpSum, req.Client);
         decimal ship = ShippingOf(_tmpSum - _tmpDiscount);
         decimal total = _tmpSum - _tmpDiscount + ship;
 
-        string txt = "Документ #" + ticketId + "\n";
-        txt += "Клієнт: " + clientName + "\n";
-        for (int i = 0; i < lines!.Count; i++)
+        string txt = "Документ #" + req.TicketId + "\n";
+        txt += "Клієнт: " + req.Client.Name + "\n";
+        for (int i = 0; i < req.Lines!.Count; i++)
         {
-            txt += lines[i].WorkCode + " x" + lines[i].Quantity + " = " +
-                (lines[i].Quantity * lines[i].UnitPrice)
-                    .ToString("0.00") + " " + currency + "\n";
+            txt += req.Lines[i].WorkCode + " x" + req.Lines[i].Quantity + " = " +
+                (req.Lines[i].Quantity * req.Lines[i].UnitPrice)
+                    .ToString("0.00") + " " + req.Currency + "\n";
         }
         txt += "Знижка: " + _tmpDiscount.ToString("0.00") +
-            " " + currency + "\n";
+            " " + req.Currency + "\n";
         txt += "Доставка: " + ship.ToString("0.00") +
-            " " + currency + "\n";
+            " " + req.Currency + "\n";
         txt += "Разом: " + total.ToString("0.00") +
-            " " + currency + "\n";
+            " " + req.Currency + "\n";
 
-        if (sendMail)
+        if (req.SendMail)
         {
-            _log.Add("mail -> " + clientMail);
+            _log.Add("mail -> " + req.Client.Email);
         }
         return txt;
     }
 
-    private static string? Validate(
-        List<WorkLine>? lines, TicketState state, string? clientMail)
+    private static string? Validate(TicketRequest req)
     {
-        if (lines is null) return "ERR: null";
-        if (lines.Count == 0) return "ERR: empty";
-        if (state is not (TicketState.New or TicketState.Paid)) return "ERR: state";
-        if (clientMail is null || !clientMail.Contains("@")) return "ERR: mail";
+        if (req.Lines is null) return "ERR: null";
+        if (req.Lines.Count == 0) return "ERR: empty";
+        if (req.State is not (TicketState.New or TicketState.Paid)) return "ERR: state";
+        if (!req.Client.HasValidEmail) return "ERR: mail";
         return null;
     }
 
-    private static decimal Subtotal(List<WorkLine> lines)
+    private static decimal Subtotal(IReadOnlyList<WorkLine> lines)
     {
         decimal sum = 0m;
         for (int i = 0; i < lines.Count; i++)
@@ -91,20 +86,20 @@ public class LegacyTicketProcessor
         return sum;
     }
 
-    private static decimal DiscountOf(decimal subtotal, ClientKind clientKind, int clientDone)
+    private static decimal DiscountOf(decimal subtotal, Client client)
     {
         decimal discount = 0m;
-        if (clientKind == ClientKind.Vip)
+        if (client.Kind == ClientKind.Vip)
         {
             discount = subtotal * PricingRules.VipRate;
             if (discount > PricingRules.MaxDiscount) discount = PricingRules.MaxDiscount;
         }
-        else if (clientKind == ClientKind.Staff)
+        else if (client.Kind == ClientKind.Staff)
         {
             discount = subtotal * PricingRules.StaffRate;
             if (discount > PricingRules.MaxDiscount) discount = PricingRules.MaxDiscount;
         }
-        else if (clientDone > PricingRules.LoyalOrders)
+        else if (client.IsLoyal)
         {
             discount = subtotal * PricingRules.LoyalRate;
             if (discount > PricingRules.MaxDiscount) discount = PricingRules.MaxDiscount;
@@ -115,11 +110,10 @@ public class LegacyTicketProcessor
     private static decimal ShippingOf(decimal payable) =>
         payable < PricingRules.FreeShipFrom ? PricingRules.ShipCost : 0m;
 
-        public decimal Preview(ClientKind clientKind, int clientDone,
-        List<WorkLine> lines)
+    public decimal Preview(Client client, IReadOnlyList<WorkLine> lines)
     {
         decimal subtotal = Subtotal(lines);
-        decimal discount = DiscountOf(subtotal, clientKind, clientDone);
+        decimal discount = DiscountOf(subtotal, client);
         decimal payable = subtotal - discount;
         return payable + ShippingOf(payable);
     }
