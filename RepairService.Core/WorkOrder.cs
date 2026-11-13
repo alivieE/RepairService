@@ -1,5 +1,3 @@
-using System.Globalization;
-
 namespace RepairService.Core;
 
 /// <summary>
@@ -47,7 +45,7 @@ public class WorkOrder
     /// <summary>Найкоротше допустиме ім’я клієнта, символів.</summary>
     private const int MinCustomerNameLength = 3;
 
-    private readonly List<string[]> _lines = new List<string[]>();
+    private readonly List<(string WorkCode, int Quantity, decimal UnitPrice)> _lines = new();
 
     /// <summary>
     /// Створює новий наряд на ремонт у стані «нова».
@@ -103,11 +101,7 @@ public class WorkOrder
     /// <param name="unitPrice">Ціна за одиницю, грн.</param>
     public void AddLine(string workCode, int quantity, decimal unitPrice)
     {
-        string[] line = new string[3];
-        line[0] = workCode;
-        line[1] = quantity.ToString(CultureInfo.CurrentCulture);
-        line[2] = unitPrice.ToString(CultureInfo.CurrentCulture);
-        _lines.Add(line);
+        _lines.Add((workCode, quantity, unitPrice));
     }
 
     /// <summary>
@@ -122,9 +116,7 @@ public class WorkOrder
         int lineCount = 0;
         for (int i = 0; i < _lines.Count; i++)
         {
-            int quantity = int.Parse(_lines[i][1], CultureInfo.CurrentCulture);
-            decimal unitPrice = decimal.Parse(_lines[i][2], CultureInfo.CurrentCulture);
-            total += quantity * unitPrice;
+            total += _lines[i].Quantity * _lines[i].UnitPrice;
             lineCount++;
         }
 
@@ -215,12 +207,10 @@ public class WorkOrder
         string report = string.Empty;
         for (int i = 0; i < _lines.Count; i++)
         {
-            int quantity = int.Parse(_lines[i][1], CultureInfo.CurrentCulture);
-            decimal unitPrice = decimal.Parse(_lines[i][2], CultureInfo.CurrentCulture);
-            report = report + "Робота: " + _lines[i][0]
-                + "; кількість: " + _lines[i][1]
-                + "; ціна: " + _lines[i][2]
-                + "; сума: " + (quantity * unitPrice)
+            report = report + "Робота: " + _lines[i].WorkCode
+                + "; кількість: " + _lines[i].Quantity
+                + "; ціна: " + _lines[i].UnitPrice
+                + "; сума: " + (_lines[i].Quantity * _lines[i].UnitPrice)
                 + "\n";
         }
 

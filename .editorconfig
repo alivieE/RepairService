@@ -76,3 +76,7 @@ dotnet_diagnostic.SA1201.severity = warning
 dotnet_diagnostic.SA1503.severity = warning
 dotnet_diagnostic.SA1516.severity = warning
 dotnet_diagnostic.IDE0055.severity = warning
+
+# CA1848: методичка вимагає виклики LogInformation з іменованими заповнювачами;
+# генератор LoggerMessage для навчального консольного застосунку не потрібен
+dotnet_diagnostic.CA1848.severity = none

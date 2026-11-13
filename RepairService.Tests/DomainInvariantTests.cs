@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging.Abstractions;
 using RepairService.Core.Domain;
 using RepairService.Core.Notifications;
 using RepairService.Core.Pricing;
@@ -32,7 +33,8 @@ public class DomainInvariantTests
         RepairTicketService service = new(
             new InMemoryRepairTicketRepository(),
             new DiscountPricingPolicy(0.10m),
-            new TextWriterNotifier(TextWriter.Null));
+            new TextWriterNotifier(TextWriter.Null),
+            NullLogger<RepairTicketService>.Instance);
         RepairTicket ticket = NewTicket(2);
         ticket.AddLine(new RepairWork("WRK-1", 2, 100m));
 
