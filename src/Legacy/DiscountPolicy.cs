@@ -2,16 +2,30 @@ namespace RepairService.Legacy;
 
 public sealed class DiscountPolicy
 {
+    // порядок важливий: перше правило, що підходить, визначає ставку
+    private readonly IReadOnlyList<IDiscountRule> _rules = new IDiscountRule[]
+    {
+        new VipDiscountRule(),
+        new StaffDiscountRule(),
+        new LoyalDiscountRule(),
+    };
+
     public decimal For(decimal subtotal, Client client)
     {
         decimal rate = RateFor(client);
         return Math.Min(subtotal * rate, PricingRules.MaxDiscount);
     }
 
-    private static decimal RateFor(Client client) => client.Kind switch
+    private decimal RateFor(Client client)
     {
-        ClientKind.Vip => PricingRules.VipRate,
-        ClientKind.Staff => PricingRules.StaffRate,
-        _ => client.IsLoyal ? PricingRules.LoyalRate : 0m,
-    };
+        foreach (IDiscountRule rule in _rules)
+        {
+            decimal? rate = rule.RateFor(client);
+            if (rate.HasValue)
+            {
+                return rate.Value;
+            }
+        }
+        return 0m;
+    }
 }
