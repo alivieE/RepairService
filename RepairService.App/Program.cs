@@ -67,8 +67,12 @@ static void RunApplication(ILoggerFactory loggerFactory)
         notifier,
         loggerFactory.CreateLogger<RepairTicketService>());
 
+    // журнал аудиту володіє файлом: using закриє його навіть після винятку
+    using FileAuditLog audit = new("audit.log");
+
     RepairTicket ticket = new(1, 100, "Lenovo IdeaPad 5", new DateOnly(2026, 11, 2));
     service.Place(ticket);
+    audit.Write("ticket.placed", ticket.Id);
 
     RepairWork line = ReadRepairWork();
     service.AddLine(ticket.Id, line);
@@ -78,7 +82,11 @@ static void RunApplication(ILoggerFactory loggerFactory)
     decimal total = service.TotalOf(ticket);
     Console.WriteLine($"Сума: {total:0.00}");
     service.Pay(ticket.Id, 500m);
+    audit.Write("ticket.paid", ticket.Id);
     Console.WriteLine($"Квитанція № {ticket.Id}: стан {ticket.Status}");
+
+    Directory.CreateDirectory("reports");
+    service.ExportReport(Path.Combine("reports", $"ticket-{ticket.Id}.txt"), ticket);
 
     // відмова після видачі заборонена: Warning і Error у журналі, код 1
     service.Cancel(ticket.Id, "клієнт передумав");

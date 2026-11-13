@@ -163,11 +163,24 @@ public sealed class RepairTicketService
     /// <summary>Зберігає звіт про квитанцію у файл.</summary>
     /// <param name="path">Шлях до файлу звіту.</param>
     /// <param name="ticket">Квитанція на ремонт.</param>
+    /// <exception cref="IOException">Файл неможливо записати.</exception>
     public void ExportReport(string path, RepairTicket ticket)
     {
-        var writer = new StreamWriter(path);
-        writer.WriteLine($"Квитанція {ticket.Id}");
-        writer.WriteLine(TotalOf(ticket));
-        writer.Close();
+        ArgumentException.ThrowIfNullOrWhiteSpace(path);
+        ArgumentNullException.ThrowIfNull(ticket);
+        using IDisposable? scope = _log.BeginScope("Ticket:{TicketId}", ticket.Id);
+        try
+        {
+            using var writer = new StreamWriter(path);
+            writer.WriteLine($"Квитанція {ticket.Id}");
+            writer.WriteLine(TotalOf(ticket));
+        }
+        catch (IOException ex)
+        {
+            _log.LogError(ex, "Не вдалося зберегти звіт у {Path}", path);
+            throw;
+        }
+
+        _log.LogInformation("Звіт збережено у {Path}", path);
     }
 }

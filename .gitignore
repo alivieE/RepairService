@@ -488,3 +488,7 @@ $RECYCLE.BIN/
 data/*.local.json
 # тека RepairService.App підпадає під правило *.app, бо Windows не розрізняє регістр
 !RepairService.App/
+
+# результати запуску ЛР5
+audit.log
+reports/
