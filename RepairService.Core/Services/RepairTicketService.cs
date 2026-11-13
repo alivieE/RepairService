@@ -1,3 +1,4 @@
+using System.Globalization;
 using RepairService.Core.Abstractions;
 using RepairService.Core.Domain;
 
@@ -54,5 +55,90 @@ public sealed class RepairTicketService
         }
 
         return total;
+    }
+
+    /// <summary>Додає позицію до квитанції з рядків, введених у консолі.</summary>
+    /// <param name="ticketId">Номер квитанції.</param>
+    /// <param name="code">Код роботи.</param>
+    /// <param name="quantity">Кількість рядком.</param>
+    /// <param name="unitPrice">Ціна за одиницю рядком.</param>
+    public void AddLine(int ticketId, string code, string quantity, string unitPrice)
+    {
+        var ticket = _repository.GetById(ticketId);
+        var count = int.Parse(quantity, CultureInfo.CurrentCulture);
+        var price = decimal.Parse(unitPrice, CultureInfo.CurrentCulture);
+        ticket!.AddLine(new RepairWork(code, count, price));
+    }
+
+    /// <summary>Оплата при видачі пристрою.</summary>
+    /// <param name="ticketId">Номер квитанції.</param>
+    /// <param name="amount">Сплачена сума, грн.</param>
+    /// <returns>0 — успіх, -1 — не знайдено, -2 — не той стан, -3 — недоплата.</returns>
+    public int Pay(int ticketId, decimal amount)
+    {
+        var ticket = _repository.GetById(ticketId);
+        if (ticket == null)
+        {
+            return -1;
+        }
+
+        if (ticket.Status != TicketStatus.Ready)
+        {
+            return -2;
+        }
+
+        if (amount < TotalOf(ticket))
+        {
+            return -3;
+        }
+
+        ticket.Issue();
+        return 0;
+    }
+
+    /// <summary>Завантажує квитанцію за номером.</summary>
+    /// <param name="ticketId">Номер квитанції.</param>
+    /// <returns>Квитанція або null.</returns>
+    public RepairTicket? Load(int ticketId)
+    {
+        try
+        {
+            return _repository.GetById(ticketId);
+        }
+        catch
+        {
+        }
+
+        return null;
+    }
+
+    /// <summary>Відмовляє в ремонті.</summary>
+    /// <param name="ticketId">Номер квитанції.</param>
+    /// <param name="reason">Причина відмови.</param>
+    public void Cancel(int ticketId, string reason)
+    {
+        try
+        {
+            var ticket = _repository.GetById(ticketId);
+            ticket!.Reject();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Щось пішло не так");
+#pragma warning disable CA2200 // стан «до» для ЛР5; виправляється в завданні 5
+            throw ex;
+#pragma warning restore CA2200
+        }
+    }
+
+    /// <summary>Зберігає звіт про квитанцію у файл.</summary>
+    /// <param name="path">Шлях до файлу звіту.</param>
+    /// <param name="ticket">Квитанція на ремонт.</param>
+    public void ExportReport(string path, RepairTicket ticket)
+    {
+        var writer = new StreamWriter(path);
+        writer.WriteLine($"Квитанція {ticket.Id}");
+        writer.WriteLine(TotalOf(ticket));
+        writer.Close();
     }
 }
