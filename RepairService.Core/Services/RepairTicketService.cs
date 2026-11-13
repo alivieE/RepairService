@@ -66,10 +66,7 @@ public sealed class RepairTicketService
     public void AddLine(int ticketId, RepairWork line)
     {
         ArgumentNullException.ThrowIfNull(line);
-        RepairTicket ticket = _repository.GetById(ticketId)
-            ?? throw new DomainRuleException(
-                "ticket.exists",
-                $"Квитанцію № {ticketId} не знайдено.");
+        RepairTicket ticket = Load(ticketId);
         if (ticket.Status != TicketStatus.Received)
         {
             throw new DomainRuleException(
@@ -88,10 +85,7 @@ public sealed class RepairTicketService
     /// </exception>
     public void Pay(int ticketId, decimal amount)
     {
-        RepairTicket ticket = _repository.GetById(ticketId)
-            ?? throw new DomainRuleException(
-                "ticket.exists",
-                $"Квитанцію № {ticketId} не знайдено.");
+        RepairTicket ticket = Load(ticketId);
         if (ticket.Status != TicketStatus.Ready)
         {
             throw new DomainRuleException(
@@ -112,36 +106,36 @@ public sealed class RepairTicketService
 
     /// <summary>Завантажує квитанцію за номером.</summary>
     /// <param name="ticketId">Номер квитанції.</param>
-    /// <returns>Квитанція або null.</returns>
-    public RepairTicket? Load(int ticketId)
+    /// <returns>Знайдена квитанція.</returns>
+    /// <exception cref="DomainRuleException">Квитанцію не знайдено.</exception>
+    public RepairTicket Load(int ticketId)
     {
-        try
-        {
-            return _repository.GetById(ticketId);
-        }
-        catch
-        {
-        }
-
-        return null;
+        return _repository.GetById(ticketId)
+            ?? throw new DomainRuleException(
+                "ticket.exists",
+                $"Квитанцію № {ticketId} не знайдено.");
     }
 
-    /// <summary>Відмовляє в ремонті.</summary>
+    /// <summary>Відмовляє в ремонті; дозволено лише до завершення ремонту.</summary>
     /// <param name="ticketId">Номер квитанції.</param>
     /// <param name="reason">Причина відмови.</param>
+    /// <exception cref="DomainRuleException">
+    /// Квитанцію не знайдено або її стан не дозволяє відмову.
+    /// </exception>
     public void Cancel(int ticketId, string reason)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(reason);
+        RepairTicket ticket = Load(ticketId);
         try
         {
-            var ticket = _repository.GetById(ticketId);
-            ticket!.Reject();
+            ticket.Reject();
         }
-        catch (Exception ex)
+        catch (InvalidOperationException ex)
         {
-            Console.WriteLine("Щось пішло не так");
-#pragma warning disable CA2200 // стан «до» для ЛР5; виправляється в завданні 5
-            throw ex;
-#pragma warning restore CA2200
+            throw new DomainRuleException(
+                "ticket.cancellable",
+                $"Квитанцію № {ticketId} у стані {ticket.Status} скасувати не можна.",
+                ex);
         }
     }
 

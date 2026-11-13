@@ -13,17 +13,10 @@ public static class ImportRows
         var valid = 0;
         foreach (var row in rows)
         {
-            try
+            if (int.TryParse(row, NumberStyles.Integer, CultureInfo.CurrentCulture, out int count)
+                && count > 0)
             {
-                var quantity = int.Parse(row, CultureInfo.CurrentCulture);
-                if (quantity > 0)
-                {
-                    valid++;
-                }
-            }
-            catch (FormatException)
-            {
-                // не число — пропускаємо
+                valid++;
             }
         }
 
