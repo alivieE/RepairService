@@ -492,3 +492,9 @@ data/*.local.json
 # результати запуску ЛР5
 audit.log
 reports/
+
+# результати тестів і звіти покриття (ЛР7)
+bin/
+obj/
+TestResults/
+coverage/
