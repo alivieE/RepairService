@@ -56,6 +56,22 @@ public class RepairTicketServiceTests
         Assert.Equal("ticket.exists", ex.Rule);
     }
 
+    [Fact]
+    public void Pay_InWorkTicket_ThrowsPayable()
+    {
+        // Arrange
+        FakeRepairTicketRepository repository = new();
+        RepairTicketService service = NewService(repository, new StubPricingPolicy(100m));
+        RepairTicket ticket = NewTicketWithLine(1);
+        ticket.StartWork();
+        repository.Add(ticket);
+
+        // Act
+        DomainRuleException ex = Assert.Throws<DomainRuleException>(() => service.Pay(1, 100m));
+
+        // Assert
+        Assert.Equal("ticket.payable", ex.Rule);
+    }
     private static RepairTicketService NewService(IRepairTicketRepository repository, IPricingPolicy pricing)
     {
         return new RepairTicketService(
@@ -63,5 +79,11 @@ public class RepairTicketServiceTests
             pricing,
             new TextWriterNotifier(TextWriter.Null),
             NullLogger<RepairTicketService>.Instance);
+    }
+    private static RepairTicket NewTicketWithLine(int id)
+    {
+        RepairTicket ticket = new(id, 100, "Lenovo IdeaPad 5", AcceptedOn);
+        ticket.AddLine(new RepairWork("WRK-1", 1, 100m));
+        return ticket;
     }
 }
