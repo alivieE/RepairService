@@ -72,6 +72,138 @@ public class RepairTicketServiceTests
         // Assert
         Assert.Equal("ticket.payable", ex.Rule);
     }
+
+    [Fact]
+    public void Pay_ExactTotal_IssuesTicket()
+    {
+        // Arrange
+        FakeRepairTicketRepository repository = new();
+        RepairTicketService service = NewService(repository, new StubPricingPolicy(100m));
+        RepairTicket ticket = NewReadyTicket(1);
+        repository.Add(ticket);
+
+        // Act
+        service.Pay(1, 100m);
+
+        // Assert
+        Assert.Equal(TicketStatus.Issued, ticket.Status);
+    }
+
+    [Fact]
+    public void Pay_Overpayment_StillIssuesTicket()
+    {
+        // Arrange
+        FakeRepairTicketRepository repository = new();
+        RepairTicketService service = NewService(repository, new StubPricingPolicy(100m));
+        RepairTicket ticket = NewReadyTicket(1);
+        repository.Add(ticket);
+
+        // Act
+        service.Pay(1, 150m);
+
+        // Assert
+        Assert.Equal(TicketStatus.Issued, ticket.Status);
+    }
+
+    [Fact]
+    public void AddLine_ReceivedTicket_AddsLine()
+    {
+        // Arrange
+        FakeRepairTicketRepository repository = new();
+        RepairTicketService service = NewService(repository, new StubPricingPolicy(1m));
+        RepairTicket ticket = new(1, 100, "Lenovo IdeaPad 5", AcceptedOn);
+        repository.Add(ticket);
+
+        // Act
+        service.AddLine(1, new RepairWork("WRK-1", 2, 250m));
+
+        // Assert
+        Assert.Single(ticket.Lines);
+    }
+
+    [Fact]
+    public void AddLine_TicketInWork_ThrowsEditable()
+    {
+        // Arrange
+        FakeRepairTicketRepository repository = new();
+        RepairTicketService service = NewService(repository, new StubPricingPolicy(1m));
+        RepairTicket ticket = NewTicketWithLine(1);
+        ticket.StartWork();
+        repository.Add(ticket);
+
+        // Act
+        DomainRuleException ex = Assert.Throws<DomainRuleException>(
+            () => service.AddLine(1, new RepairWork("PRT-2", 1, 50m)));
+
+        // Assert
+        Assert.Equal("ticket.editable", ex.Rule);
+    }
+
+    [Fact]
+    public void Cancel_ReceivedTicket_RejectsTicket()
+    {
+        // Arrange
+        FakeRepairTicketRepository repository = new();
+        RepairTicketService service = NewService(repository, new StubPricingPolicy(1m));
+        RepairTicket ticket = NewTicketWithLine(1);
+        repository.Add(ticket);
+
+        // Act
+        service.Cancel(1, "клієнт передумав");
+
+        // Assert
+        Assert.Equal(TicketStatus.Rejected, ticket.Status);
+    }
+
+    [Fact]
+    public void Cancel_IssuedTicket_ThrowsCancellableWithInner()
+    {
+        // Arrange
+        FakeRepairTicketRepository repository = new();
+        RepairTicketService service = NewService(repository, new StubPricingPolicy(100m));
+        RepairTicket ticket = NewReadyTicket(1);
+        ticket.Issue();
+        repository.Add(ticket);
+
+        // Act
+        DomainRuleException ex = Assert.Throws<DomainRuleException>(
+            () => service.Cancel(1, "клієнт передумав"));
+
+        // Assert
+        Assert.Equal("ticket.cancellable", ex.Rule);
+        Assert.IsType<InvalidOperationException>(ex.InnerException);
+    }
+
+    [Fact]
+    public void ExportReport_Ticket_WritesIdToFile()
+    {
+        // Arrange
+        RepairTicketService service = NewService(new FakeRepairTicketRepository(), new StubPricingPolicy(100m));
+        string path = Path.GetTempFileName();
+
+        // Act
+        service.ExportReport(path, NewTicketWithLine(5));
+
+        // Assert
+        string text = File.ReadAllText(path);
+        File.Delete(path);
+        Assert.Contains("Квитанція 5", text);
+    }
+
+    [Fact]
+    public void ExportReport_MissingFolder_ThrowsIoException()
+    {
+        // Arrange
+        RepairTicketService service = NewService(new FakeRepairTicketRepository(), new StubPricingPolicy(100m));
+        string path = Path.Combine(Path.GetTempPath(), "missing-" + Path.GetRandomFileName(), "report.txt");
+
+        // Act
+        void Act() => service.ExportReport(path, NewTicketWithLine(5));
+
+        // Assert
+        Assert.ThrowsAny<IOException>(Act);
+    }
+
     private static RepairTicketService NewService(IRepairTicketRepository repository, IPricingPolicy pricing)
     {
         return new RepairTicketService(
@@ -80,6 +212,15 @@ public class RepairTicketServiceTests
             new TextWriterNotifier(TextWriter.Null),
             NullLogger<RepairTicketService>.Instance);
     }
+
+    private static RepairTicket NewReadyTicket(int id)
+    {
+        RepairTicket ticket = NewTicketWithLine(id);
+        ticket.StartWork();
+        ticket.Complete();
+        return ticket;
+    }
+
     private static RepairTicket NewTicketWithLine(int id)
     {
         RepairTicket ticket = new(id, 100, "Lenovo IdeaPad 5", AcceptedOn);
