@@ -503,3 +503,7 @@ coverage/
 .idea/
 
 coverage.cobertura.xml
+
+**/*.secrets.json
+
+appsettings.Local.json
