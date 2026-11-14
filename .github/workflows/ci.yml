@@ -11,10 +11,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Отримати код
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Установити .NET 8
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 8.0.x
 
@@ -36,7 +36,7 @@ jobs:
 
       - name: Зберегти звіт про покриття
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: coverage
           path: '**/coverage.cobertura.xml'
