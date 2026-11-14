@@ -498,3 +498,6 @@ bin/
 obj/
 TestResults/
 coverage/
+
+.vs/
+.idea/
