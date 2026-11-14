@@ -498,3 +498,12 @@ bin/
 obj/
 TestResults/
 coverage/
+
+.vs/
+.idea/
+
+coverage.cobertura.xml
+
+**/*.secrets.json
+
+appsettings.Local.json

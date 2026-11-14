@@ -21,8 +21,16 @@ public sealed class Client
     public string Describe()
     {
         string s = Name.Trim().ToUpper();
-        if (Kind == ClientKind.Vip) s += " [VIP]";
-        if (IsLoyal) s += " [ЛОЯЛЬНИЙ]";
+        if (Kind == ClientKind.Vip)
+        {
+            s += " [VIP]";
+        }
+
+        if (IsLoyal)
+        {
+            s += " [ЛОЯЛЬНИЙ]";
+        }
+
         s += " <" + Email.ToLower() + ">";
         int years = DateTime.Now.Year - SinceUtc.Year;
         s += " стаж " + years;
@@ -49,7 +57,10 @@ public class LegacyTicketProcessor
     public string Handle(TicketRequest req)
     {
         string? error = Validate(req);
-        if (error != null) return error;
+        if (error != null)
+        {
+            return error;
+        }
 
         _log.Add("ok " + req.TicketId);
 
@@ -67,10 +78,26 @@ public class LegacyTicketProcessor
 
     private static string? Validate(TicketRequest req)
     {
-        if (req.Lines is null) return "ERR: null";
-        if (req.Lines.Count == 0) return "ERR: empty";
-        if (req.State is not (TicketState.New or TicketState.Paid)) return "ERR: state";
-        if (!req.Client.HasValidEmail) return "ERR: mail";
+        if (req.Lines is null)
+        {
+            return "ERR: null";
+        }
+
+        if (req.Lines.Count == 0)
+        {
+            return "ERR: empty";
+        }
+
+        if (req.State is not (TicketState.New or TicketState.Paid))
+        {
+            return "ERR: state";
+        }
+
+        if (!req.Client.HasValidEmail)
+        {
+            return "ERR: mail";
+        }
+
         return null;
     }
 
@@ -95,7 +122,11 @@ public class LegacyTicketProcessor
     public string DumpLog()
     {
         string r = "";
-        foreach (var l in _log) r += l + "\n";
+        foreach (var l in _log)
+        {
+            r += l + "\n";
+        }
+
         return r;
     }
 }

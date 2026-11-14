@@ -1,6 +1,7 @@
 using System.Text;
 using Microsoft.Extensions.Logging;
 using RepairService.App.Input;
+using RepairService.Core;
 using RepairService.Core.Abstractions;
 using RepairService.Core.Domain;
 using RepairService.Core.Errors;
@@ -10,6 +11,7 @@ using RepairService.Core.Services;
 using RepairService.Core.Storage;
 
 Console.OutputEncoding = Encoding.UTF8;
+Console.WriteLine($"RepairService v{VersionInfo.Current()}");
 
 using ILoggerFactory loggerFactory = LoggerFactory.Create(builder =>
 {
