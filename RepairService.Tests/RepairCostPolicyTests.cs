@@ -48,4 +48,17 @@ public class RepairCostPolicyTests
         // Assert
         Assert.Equal("quantity", ex.ParamName);
     }
+
+    [Fact]
+    public void LineCostFor_HugeUrgentLine_SurchargeCappedAt500()
+    {
+        // Arrange
+        int quantity = 4;
+
+        // Act
+        decimal actual = RepairCostPolicy.LineCostFor(1000m, quantity, true);
+
+        // Assert
+        Assert.Equal(4500m, actual);
+    }
 }
