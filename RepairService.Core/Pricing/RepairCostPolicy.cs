@@ -15,6 +15,9 @@ public static class RepairCostPolicy
     /// <summary>Кількість одиниць, з якої діє знижка.</summary>
     public const int BulkFrom = 5;
 
+    /// <summary>Найбільша надбавка за терміновість на одну позицію, грн.</summary>
+    public const decimal MaxUrgentSurcharge = 500m;
+
     /// <summary>Обчислює вартість позиції, грн.</summary>
     /// <param name="unitPrice">Ціна за одиницю, грн; 0 — безкоштовна робота.</param>
     /// <param name="quantity">Кількість одиниць, не менше 1.</param>
@@ -33,17 +36,19 @@ public static class RepairCostPolicy
             throw new ArgumentOutOfRangeException(nameof(quantity), "Кількість має бути не менше 1.");
         }
 
+        decimal baseCost = unitPrice * quantity;
         decimal factor = 1m;
-        if (isUrgent)
-        {
-            factor += UrgentRate;
-        }
-
         if (quantity >= BulkFrom)
         {
             factor -= BulkRate;
         }
 
-        return decimal.Round(unitPrice * quantity * factor, 2, MidpointRounding.AwayFromZero);
+        decimal surcharge = 0m;
+        if (isUrgent)
+        {
+            surcharge = Math.Min(baseCost * UrgentRate, MaxUrgentSurcharge);
+        }
+
+        return decimal.Round((baseCost * factor) + surcharge, 2, MidpointRounding.AwayFromZero);
     }
 }
