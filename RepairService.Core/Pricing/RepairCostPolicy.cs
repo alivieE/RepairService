@@ -26,6 +26,14 @@ public static class RepairCostPolicy
     /// <exception cref="ArgumentOutOfRangeException">Ціна від’ємна або кількість менша за 1.</exception>
     public static decimal LineCostFor(decimal unitPrice, int quantity, bool isUrgent)
     {
+        EnsureArgumentsAreValid(unitPrice, quantity);
+        decimal baseCost = unitPrice * quantity;
+        decimal cost = (baseCost * BulkFactorFor(quantity)) + SurchargeFor(baseCost, isUrgent);
+        return decimal.Round(cost, 2, MidpointRounding.AwayFromZero);
+    }
+
+    private static void EnsureArgumentsAreValid(decimal unitPrice, int quantity)
+    {
         if (unitPrice < 0m)
         {
             throw new ArgumentOutOfRangeException(nameof(unitPrice), "Ціна не може бути від’ємною.");
@@ -35,20 +43,11 @@ public static class RepairCostPolicy
         {
             throw new ArgumentOutOfRangeException(nameof(quantity), "Кількість має бути не менше 1.");
         }
-
-        decimal baseCost = unitPrice * quantity;
-        decimal factor = 1m;
-        if (quantity >= BulkFrom)
-        {
-            factor -= BulkRate;
-        }
-
-        decimal surcharge = 0m;
-        if (isUrgent)
-        {
-            surcharge = Math.Min(baseCost * UrgentRate, MaxUrgentSurcharge);
-        }
-
-        return decimal.Round((baseCost * factor) + surcharge, 2, MidpointRounding.AwayFromZero);
     }
+
+    private static decimal BulkFactorFor(int quantity) =>
+        quantity >= BulkFrom ? 1m - BulkRate : 1m;
+
+    private static decimal SurchargeFor(decimal baseCost, bool isUrgent) =>
+        isUrgent ? Math.Min(baseCost * UrgentRate, MaxUrgentSurcharge) : 0m;
 }

@@ -13,6 +13,8 @@ public class RepairCostPolicyTests
     [InlineData(200, 5, true, 1200)]
     [InlineData(33.33, 1, true, 43.33)]
     [InlineData(0.05, 1, true, 0.07)]
+    [InlineData(1600, 1, true, 2080)]
+    [InlineData(2000, 1, true, 2500)]
     public void LineCostFor_Boundaries_MatchesTable(
         double unitPrice, int quantity, bool isUrgent, double expected)
     {
