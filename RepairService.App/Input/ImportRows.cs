@@ -10,6 +10,7 @@ public static class ImportRows
     /// <returns>Кількість коректних рядків.</returns>
     public static int CountValidQuantities(string[] rows)
     {
+        ArgumentNullException.ThrowIfNull(rows);
         var valid = 0;
         foreach (var row in rows)
         {

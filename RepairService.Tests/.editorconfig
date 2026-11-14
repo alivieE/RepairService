@@ -1,3 +1,6 @@
 [*.cs]
 # імена тестів мають вигляд Метод_Сценарій_Результат, тому підкреслення навмисні
 dotnet_diagnostic.CA1707.severity = none
+# CA1307: у тестах Assert.Contains перевіряє наявність фрагмента в тексті,
+# який формує сам тест; явний StringComparison тут нічого не уточнює
+dotnet_diagnostic.CA1307.severity = none

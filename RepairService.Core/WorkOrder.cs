@@ -82,6 +82,7 @@ public class WorkOrder
     /// <returns>Знайдений наряд або null, якщо наряду з таким номером немає.</returns>
     public static WorkOrder? FindById(List<WorkOrder> workOrders, string workOrderId)
     {
+        ArgumentNullException.ThrowIfNull(workOrders);
         for (int i = 0; i < workOrders.Count; i++)
         {
             if (workOrders[i].Id == workOrderId)
