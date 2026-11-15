@@ -1,5 +1,4 @@
 using System.Globalization;
-using RepairService.Legacy;
 
 namespace RepairService.Legacy.Tests;
 
