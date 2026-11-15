@@ -45,4 +45,34 @@ public static class PriorityRules
     /// <returns>Дата, до якої ремонт має бути завершено.</returns>
     public static DateOnly DeadlineOf(DateOnly createdAt, TicketPriority priority) =>
         createdAt.AddDays(DaysFor(priority));
+
+    /// <summary>
+    /// Обчислює вартість заявки: роботи з надбавкою за пріоритет плюс запчастини
+    /// без надбавки; результат заокруглено до копійок «половина — від нуля».
+    /// </summary>
+    /// <param name="lines">Позиції заявки.</param>
+    /// <param name="priority">Пріоритет заявки.</param>
+    /// <returns>Вартість, грн; для заявки без позицій — 0,00.</returns>
+    /// <exception cref="ArgumentNullException">Позиції не передано.</exception>
+    public static decimal TotalOf(IEnumerable<RepairWork> lines, TicketPriority priority)
+    {
+        ArgumentNullException.ThrowIfNull(lines);
+
+        decimal works = 0m;
+        decimal parts = 0m;
+        foreach (RepairWork line in lines)
+        {
+            if (line.Kind == LineKind.Part)
+            {
+                parts += line.Amount;
+            }
+            else
+            {
+                works += line.Amount;
+            }
+        }
+
+        decimal total = (works * (1m + SurchargeOf(priority))) + parts;
+        return Math.Round(total, 2, MidpointRounding.AwayFromZero);
+    }
 }
