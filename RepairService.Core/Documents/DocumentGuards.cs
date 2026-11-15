@@ -24,7 +24,7 @@ public static class DocumentGuards
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(documentId);
         ArgumentException.ThrowIfNullOrWhiteSpace(clientName);
         ArgumentException.ThrowIfNullOrWhiteSpace(clientEmail);
-        if (!clientEmail.Contains('@'))
+        if (!clientEmail.Contains('@', StringComparison.Ordinal))
         {
             throw new ArgumentException(
                 "Пошта має містити символ @.",

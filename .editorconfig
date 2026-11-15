@@ -80,3 +80,11 @@ dotnet_diagnostic.IDE0055.severity = warning
 # CA1848: методичка вимагає виклики LogInformation з іменованими заповнювачами;
 # генератор LoggerMessage для навчального консольного застосунку не потрібен
 dotnet_diagnostic.CA1848.severity = none
+
+# ЛР8: посилені правила якості
+# форматування чисел і дат має явно вказувати культуру
+dotnet_diagnostic.CA1305.severity = warning
+# порівняння рядків має явно вказувати StringComparison
+dotnet_diagnostic.CA1307.severity = warning
+# публічні методи перевіряють аргументи на null
+dotnet_diagnostic.CA1062.severity = warning
