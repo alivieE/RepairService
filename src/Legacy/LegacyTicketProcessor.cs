@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-
 namespace RepairService.Legacy;
 
 public sealed class Client

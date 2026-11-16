@@ -5,13 +5,20 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>12.0</LangVersion>
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
-    <AnalysisLevel>8.0-recommended</AnalysisLevel>
+    <AnalysisLevel>8.0</AnalysisLevel>
+    <AnalysisMode>Recommended</AnalysisMode>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <GenerateDocumentationFile Condition="'$(MSBuildProjectName)' != 'RepairService.Legacy'">true</GenerateDocumentationFile>
     <VersionPrefix>0.8.0</VersionPrefix>
     <Authors>Новиков Роман</Authors>
     <Product>RepairService</Product>
     <NuGetAudit>true</NuGetAudit>
     <NuGetAuditMode>all</NuGetAuditMode>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- S-11: поріг цикломатичної складності для CA1502 -->
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)CodeMetricsConfig.txt" />
+  </ItemGroup>
 </Project>
