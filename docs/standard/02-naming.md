@@ -160,13 +160,15 @@
 - **Дотримання:** `RepairWork.cs`, `Customer.cs`
 - **Перевірка:** SA1649 і SA1402, error.
 
-**N-19. Модифікатор доступу вказують явно.**
+**N-19. Модифікатор доступу вказують явно; винятком є члени інтерфейсу.**
 - **Рівень:** ОБОВ’ЯЗКОВО.
 - **Обґрунтування:** типовий доступ різний для класу (`internal`) і члена
-  (`private`), тому без модифікатора читач мусить це пам’ятати.
+  (`private`), тому без модифікатора читач мусить це пам’ятати. Член
+  інтерфейсу завжди відкритий, і слово `public` перед ним лише повторює
+  очевидне, тому його не пишуть (уточнення версії 2.0.1).
 - **Порушення:** `class InMemoryRepairTicketRepository`, `decimal Subtotal()`
-- **Дотримання:** `public sealed class InMemoryRepairTicketRepository`, `private decimal Subtotal()`
-- **Перевірка:** IDE0040, error.
+- **Дотримання:** `public sealed class InMemoryRepairTicketRepository`, `private decimal Subtotal()`, а в інтерфейсі `IClock` — просто `DateOnly Today { get; }`
+- **Перевірка:** IDE0040 (`for_non_interface_members`), error.
 
 **N-20. Абревіатура з двох літер — великими (`IO`), довша — як слово (`Csv`, `Json`, `Id`).**
 - **Рівень:** РЕКОМЕНДОВАНО.

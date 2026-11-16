@@ -58,8 +58,8 @@ dotnet_style_qualification_for_field = false:error
 dotnet_style_qualification_for_property = false:error
 dotnet_style_qualification_for_method = false:error
 dotnet_diagnostic.IDE0003.severity = error
-# N-19: модифікатор доступу вказують завжди
-dotnet_style_require_accessibility_modifiers = always:error
+# N-19: модифікатор доступу вказують завжди, крім членів інтерфейсу (вони завжди public)
+dotnet_style_require_accessibility_modifiers = for_non_interface_members:error
 dotnet_diagnostic.IDE0040.severity = error
 # N-03, N-05: інтерфейс з префіксом I, параметр типу з префіксом T
 dotnet_diagnostic.CA1715.severity = error
