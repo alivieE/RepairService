@@ -22,6 +22,19 @@ public sealed class InMemoryRepairTicketRepository : IRepairTicketRepository
     }
 
     /// <inheritdoc/>
+    /// <exception cref="InvalidOperationException">Квитанції з таким номером немає.</exception>
+    public void Update(RepairTicket ticket)
+    {
+        ArgumentNullException.ThrowIfNull(ticket);
+        if (!_items.ContainsKey(ticket.Id))
+        {
+            throw new InvalidOperationException($"Квитанції № {ticket.Id} немає.");
+        }
+
+        _items[ticket.Id] = ticket;
+    }
+
+    /// <inheritdoc/>
     public RepairTicket? GetById(int id) => _items.GetValueOrDefault(id);
 
     /// <inheritdoc/>

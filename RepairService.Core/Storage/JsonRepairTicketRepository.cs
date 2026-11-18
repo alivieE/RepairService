@@ -43,6 +43,22 @@ public sealed class JsonRepairTicketRepository : IRepairTicketRepository
     }
 
     /// <inheritdoc/>
+    /// <exception cref="InvalidOperationException">Заявки з таким номером немає.</exception>
+    public void Update(RepairTicket ticket)
+    {
+        ArgumentNullException.ThrowIfNull(ticket);
+        List<TicketRecord> records = Load();
+        int index = records.FindIndex(r => r.Id == ticket.Id);
+        if (index < 0)
+        {
+            throw new InvalidOperationException($"Заявки № {ticket.Id} немає.");
+        }
+
+        records[index] = TicketRecord.From(ticket);
+        Save(records);
+    }
+
+    /// <inheritdoc/>
     public RepairTicket? GetById(int id) =>
         Load().Find(r => r.Id == id)?.ToTicket();
 

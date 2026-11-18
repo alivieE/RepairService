@@ -16,6 +16,8 @@ internal sealed class FakeRepairTicketRepository : IRepairTicketRepository
         AddCalls++;
     }
 
+    public void Update(RepairTicket ticket) => _items[ticket.Id] = ticket;
+
     public RepairTicket? GetById(int id) => _items.GetValueOrDefault(id);
 
     public IReadOnlyList<RepairTicket> GetAll() => _items.Values.ToList();

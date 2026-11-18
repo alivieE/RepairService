@@ -74,4 +74,35 @@ public sealed class JsonRepairTicketRepositoryTests : IDisposable
         Assert.Throws<InvalidOperationException>(
             () => sut.Add(new RepairTicket(1, 101, "Asus", AcceptedOn)));
     }
+
+    [Fact]
+    public void Update_ChangedStatus_PersistsBetweenInstances()
+    {
+        // Arrange
+        var ticket = new RepairTicket(1, 100, "Lenovo", AcceptedOn);
+        var sut = new JsonRepairTicketRepository(_path);
+        sut.Add(ticket);
+        ticket.AddLine(new RepairWork("WRK-1", 1, 300m));
+        ticket.StartWork();
+
+        // Act
+        sut.Update(ticket);
+
+        // Assert
+        RepairTicket? restored = new JsonRepairTicketRepository(_path).GetById(1);
+        Assert.NotNull(restored);
+        Assert.Equal(TicketStatus.InWork, restored.Status);
+        Assert.Single(restored.Lines);
+    }
+
+    [Fact]
+    public void Update_MissingTicket_Throws()
+    {
+        // Arrange
+        var sut = new JsonRepairTicketRepository(_path);
+
+        // Act + Assert
+        Assert.Throws<InvalidOperationException>(
+            () => sut.Update(new RepairTicket(5, 100, "Lenovo", AcceptedOn)));
+    }
 }
