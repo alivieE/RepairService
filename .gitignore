@@ -507,3 +507,5 @@ coverage.cobertura.xml
 **/*.secrets.json
 
 appsettings.Local.json
+# дані й журнал запуску застосунку
+data/tickets.json
