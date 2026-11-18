@@ -59,4 +59,16 @@ public class TicketIntakeServiceTests
         // Act + Assert
         Assert.ThrowsAny<ArgumentException>(() => sut.Accept(100, " ", TicketPriority.Normal));
     }
+
+    [Fact]
+    public void Accept_UnknownCustomer_Throws()
+    {
+        // Arrange
+        var repository = new FakeRepairTicketRepository();
+        var sut = new TicketIntakeService(repository, new FixedClock(Today));
+
+        // Act + Assert
+        Assert.Throws<ArgumentOutOfRangeException>(() => sut.Accept(0, "Lenovo", TicketPriority.Normal));
+        Assert.Empty(repository.GetAll());
+    }
 }
