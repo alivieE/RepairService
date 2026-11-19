@@ -1,56 +1,84 @@
 # RepairService
 
-![CI](https://github.com/alivieE/RepairService/actions/workflows/ci.yml/badge.svg)
+[![CI](https://github.com/alivieE/RepairService/actions/workflows/ci.yml/badge.svg)](https://github.com/alivieE/RepairService/actions/workflows/ci.yml)
 
-Навчальний проєкт з дисципліни «Конструювання програмного
-забезпечення». Варіант № 11: заявки на ремонт у сервісному центрі —
-приймання пристрою, діагностика, ремонт, видача клієнту й розрахунок
-вартості робіт і запчастин.
+Консольний застосунок для приймальника сервісного центру: приймає заявки на
+ремонт, рахує дедлайн і вартість за пріоритетом, проводить заявку станами й
+показує звіт про прострочені заявки.
 
-## Склад рішення
+## Автор і варіант
 
-- RepairService.Core — логіка предметної області (бібліотека)
-- RepairService.App — консольний застосунок (введення, виведення)
-- RepairService.Tests — модульні тести ядра (xUnit, coverlet)
-- src/Legacy — успадкований модуль із ЛР6
-- tests/Legacy.Tests — характеризаційні тести успадкованого модуля
+Новиков Роман Максимович, група 471, варіант 11 «RepairService — пріоритети
+заявок, розрахунок дедлайну». Дисципліна «Конструювання програмного
+забезпечення», самостійна робота № 3.
 
-## Вимоги
+## Швидкий старт
 
-.NET SDK 8.0 або новіший, Git. Версію SDK закріплено у файлі global.json.
+Потрібен .NET SDK 8.0.
 
-## Складання та запуск
+```powershell
+git clone https://github.com/alivieE/RepairService.git
+cd RepairService
+dotnet run --project RepairService.App
+```
 
-    dotnet build
-    dotnet run --project RepairService.App
+`dotnet run` сам відновлює пакети й складає рішення. Дані зберігаються в
+`data/tickets.json`, журнал — у `repairservice.log` у поточній теці.
 
-Спільні властивості складання (версія, попередження як помилки,
-аудит пакетів NuGet) задано в Directory.Build.props.
+## Структура рішення
 
-## Конвеєр CI
+| Проєкт | Призначення |
+|--------|-------------|
+| `RepairService.Core` | бібліотека логіки: домен, прикладні сервіси, сховища, правила |
+| `RepairService.App` | консольне меню, журнал у файл і композиційний корінь |
+| `RepairService.Tests` | модульні тести бібліотеки логіки (xUnit) |
+| `src/Legacy` | успадкований модуль із ЛР 7–8, залишений як зразок рефакторингу |
+| `tests/Legacy.Tests` | характеризаційні тести успадкованого модуля |
 
-Файл .github/workflows/ci.yml запускається на кожен push у main
-і feature/** та на кожен pull request у main. Зміна потрапляє в main,
-лише якщо виконано всі критерії якості:
+Шари й правило залежностей описано в [docs/architecture.md](docs/architecture.md).
 
-| Критерій     | Команда                             | Поріг                 |
-|--------------|-------------------------------------|-----------------------|
-| Форматування | dotnet format --verify-no-changes   | без змін              |
-| Складання    | dotnet build -c Release             | 0 попереджень         |
-| Тести        | dotnet test -c Release              | 100 % зелених         |
-| Покриття     | coverlet, /p:Threshold=60           | рядків не менше 60 %  |
+## Можливості
 
-Ті самі перевірки локально:
+Сценарії описано в [docs/spec.md](docs/spec.md):
 
-    dotnet format --verify-no-changes
-    dotnet build -c Release
-    dotnet test -c Release /p:CollectCoverage=true /p:Threshold=60
+- UC-01 — прийняти заявку з дедлайном за пріоритетом;
+- UC-02 — провести заявку станами Received → InWork → Ready або Rejected;
+- UC-03 — додати роботу чи деталь із прейскуранта (60 позицій);
+- UC-04 — знайти заявки за станом і пріоритетом;
+- UC-05 — звіт «Прострочені заявки» на дату з кількістю днів прострочення;
+- UC-06 — видати пристрій з оплатою; менша сума відхиляється.
 
-## Стандарт кодування
+Як користуватися меню — [docs/user-guide.md](docs/user-guide.md).
 
-Правила описано у файлі CODING_STANDARD.md і закріплено
-в .editorconfig. Перевірка: dotnet format --verify-no-changes
+## Тести й покриття
 
-## Автор
+```powershell
+dotnet test
+dotnet test /p:CollectCoverage=true /p:Include="[RepairService.Core]*"
+```
 
-Новиков Роман, група 471
+Поточний стан: 165 тестів (12 + 153), усі зелені. Покриття `RepairService.Core`:
+93,33 % за рядками, 92,23 % за гілками, 92,77 % за методами.
+
+Локальний еквівалент конвеєра CI — ті самі перевірки, що й у
+`.github/workflows/ci.yml`:
+
+```powershell
+dotnet format --verify-no-changes; dotnet build -c Release; dotnet test /p:CollectCoverage=true /p:Include="[RepairService.Core]*"
+```
+
+## Технології
+
+.NET 8, C# 12, xUnit, coverlet, аналізатори Roslyn і StyleCop
+(`TreatWarningsAsErrors`), `.editorconfig` зі стандартом кодування
+([CODING_STANDARD.md](CODING_STANDARD.md)), GitHub Actions.
+
+## Обмеження й відомий борг
+
+- Довідника клієнтів немає: номер клієнта перевіряється лише як додатне число,
+  тому альтернатива UC-01 «клієнта не знайдено» не реалізована.
+- Пошук працює за станом і пріоритетом; пошуку за клієнтом поки немає.
+- JSON-файл читається й перезаписується цілком на кожну операцію — підходить
+  для сотень заявок, але не для одночасної роботи кількох приймальників.
+- Наряд `WorkOrder` з ЛР 2 ще читає системний час напряму (борг TD-10).
+- Застосунок консольний і однокористувацький, без розмежування прав.
