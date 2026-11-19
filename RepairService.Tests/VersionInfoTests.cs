@@ -11,6 +11,6 @@ public class VersionInfoTests
         string version = VersionInfo.Current();
 
         // Assert
-        Assert.Equal("0.8.0", version);
+        Assert.Equal("1.0.0", version);
     }
 }

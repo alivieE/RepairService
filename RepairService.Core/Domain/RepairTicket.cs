@@ -15,9 +15,17 @@ public sealed class RepairTicket
     /// <param name="customerId">Ідентифікатор клієнта, більший за нуль.</param>
     /// <param name="deviceModel">Модель пристрою, не порожня.</param>
     /// <param name="createdAt">Дата оформлення квитанції.</param>
-    /// <exception cref="ArgumentOutOfRangeException">Номер чи клієнт не додатні.</exception>
+    /// <param name="priority">Пріоритет заявки; від нього залежить дедлайн (X-02).</param>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// Номер чи клієнт не додатні або пріоритет невідомий.
+    /// </exception>
     /// <exception cref="ArgumentException">Модель пристрою порожня.</exception>
-    public RepairTicket(int id, int customerId, string deviceModel, DateOnly createdAt)
+    public RepairTicket(
+        int id,
+        int customerId,
+        string deviceModel,
+        DateOnly createdAt,
+        TicketPriority priority = TicketPriority.Normal)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(id);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(customerId);
@@ -27,6 +35,8 @@ public sealed class RepairTicket
         CustomerId = customerId;
         DeviceModel = deviceModel;
         CreatedAt = createdAt;
+        Priority = priority;
+        Deadline = PriorityRules.DeadlineOf(createdAt, priority);
         Status = TicketStatus.Received;
     }
 
@@ -42,11 +52,26 @@ public sealed class RepairTicket
     /// <summary>Дата оформлення квитанції.</summary>
     public DateOnly CreatedAt { get; }
 
+    /// <summary>Пріоритет заявки.</summary>
+    public TicketPriority Priority { get; }
+
+    /// <summary>Останній день строку ремонту включно.</summary>
+    public DateOnly Deadline { get; }
+
     /// <summary>Поточний стан; змінюється лише методами-переходами.</summary>
     public TicketStatus Status { get; private set; }
 
     /// <summary>Позиції квитанції лише для читання.</summary>
     public IReadOnlyList<RepairWork> Lines => _lines.AsReadOnly();
+
+    /// <summary>
+    /// Перевіряє, чи заявка прострочена на дату звіту: ремонт ще не завершено,
+    /// а дата звіту пізніша за дедлайн (X-05). Запит без побічних ефектів.
+    /// </summary>
+    /// <param name="reportDate">Дата, на яку будують звіт.</param>
+    /// <returns>true, якщо заявка в стані Received або InWork і дедлайн минув.</returns>
+    public bool IsOverdueOn(DateOnly reportDate) =>
+        reportDate > Deadline && Status is TicketStatus.Received or TicketStatus.InWork;
 
     /// <summary>Додає позицію; дозволено лише у стані Received.</summary>
     /// <param name="line">Позиція з роботою.</param>

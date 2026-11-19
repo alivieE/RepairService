@@ -12,11 +12,12 @@ public sealed record RepairWork
     /// <param name="code">Код роботи за прейскурантом, не порожній.</param>
     /// <param name="quantity">Кількість одиниць, більша за нуль.</param>
     /// <param name="unitPrice">Ціна за одиницю, не від’ємна, грн.</param>
+    /// <param name="kind">Вид позиції: робота чи запчастина.</param>
     /// <exception cref="ArgumentException">Код порожній.</exception>
     /// <exception cref="ArgumentOutOfRangeException">
     /// Кількість не додатна або ціна від’ємна.
     /// </exception>
-    public RepairWork(string code, int quantity, decimal unitPrice)
+    public RepairWork(string code, int quantity, decimal unitPrice, LineKind kind = LineKind.Work)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(code);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(quantity);
@@ -25,6 +26,7 @@ public sealed record RepairWork
         Code = code;
         Quantity = quantity;
         UnitPrice = unitPrice;
+        Kind = kind;
     }
 
     /// <summary>Код роботи за прейскурантом.</summary>
@@ -35,6 +37,9 @@ public sealed record RepairWork
 
     /// <summary>Ціна за одиницю, зафіксована на момент оформлення, грн.</summary>
     public decimal UnitPrice { get; }
+
+    /// <summary>Вид позиції: робота чи запчастина.</summary>
+    public LineKind Kind { get; }
 
     /// <summary>Сума позиції; обчислюється, тому не розходиться з кількістю й ціною.</summary>
     public decimal Amount => Quantity * UnitPrice;

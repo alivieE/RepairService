@@ -89,7 +89,7 @@ dotnet test                         # усі тести зелені
 | 16 | `csharp_style_expression_bodied_methods` | `when_on_single_line:silent` | тіла-вирази допускаються (F-15) |
 | 17 | `dotnet_style_namespace_match_folder` | `true:error` | простір імен = теки (N-01) |
 | 18 | `dotnet_style_qualification_for_field` / `_property` / `_method` | `false:error` | без `this.` (N-10) |
-| 19 | `dotnet_style_require_accessibility_modifiers` | `always:error` | модифікатор доступу явно (N-19) |
+| 19 | `dotnet_style_require_accessibility_modifiers` | `for_non_interface_members:error` | модифікатор доступу явно, крім членів інтерфейсу (N-19) |
 | 20 | `dotnet_diagnostic.CA1715.severity` | `error` | префікси `I` та `T` (N-03, N-05) |
 | 21 | `dotnet_diagnostic.CA1717.severity` | `error` | перелічення в однині (N-04) |
 | 22 | `dotnet_naming_rule.priv_underscore.*` | `_camelCase`, `error` | приватні поля (N-09) |

@@ -11,6 +11,10 @@ public interface IRepairTicketRepository
     /// <param name="ticket">Квитанція на ремонт.</param>
     void Add(RepairTicket ticket);
 
+    /// <summary>Зберігає зміни наявної квитанції: нові позиції й стан.</summary>
+    /// <param name="ticket">Квитанція, вже додана до сховища.</param>
+    void Update(RepairTicket ticket);
+
     /// <summary>Шукає квитанцію за номером.</summary>
     /// <param name="id">Номер квитанції.</param>
     /// <returns>Знайдена квитанція або null.</returns>

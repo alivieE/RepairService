@@ -10,7 +10,7 @@
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <GenerateDocumentationFile Condition="'$(MSBuildProjectName)' != 'RepairService.Legacy'">true</GenerateDocumentationFile>
-    <VersionPrefix>0.8.0</VersionPrefix>
+    <VersionPrefix>1.0.0</VersionPrefix>
     <Authors>Новиков Роман</Authors>
     <Product>RepairService</Product>
     <NuGetAudit>true</NuGetAudit>
