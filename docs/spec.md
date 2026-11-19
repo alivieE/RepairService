@@ -31,11 +31,10 @@
 | дедлайн | `RepairTicket.Deadline` | дата, до якої ремонт має бути завершено |
 | строк ремонту | `PriorityRules.DaysFor` | кількість днів від прийняття до дедлайну |
 | надбавка за терміновість | `PriorityRules.SurchargeOf` | частка, на яку зростає вартість робіт |
-| вартість заявки | `RepairTicketService.TotalOf` | роботи з надбавкою плюс деталі, грн |
-| прострочена заявка | `OverdueReport` | незавершена заявка, дедлайн якої минув |
-| оплата при видачі | `RepairTicketService.Pay` | оплата, після якої пристрій видається |
+| вартість заявки | `PriorityRules.TotalOf`, `TicketWorkflowService.TotalOf` | роботи з надбавкою плюс деталі, грн |
+| прострочена заявка | `RepairTicket.IsOverdueOn`, `TicketQueryService.Overdue` | незавершена заявка, дедлайн якої минув |
+| оплата при видачі | `TicketWorkflowService.Pay` | оплата, після якої пристрій видається |
 | порушення правила | `DomainRuleException` | виняток домену з ідентифікатором правила |
-
 
 ## 3. Сценарії використання
 
