@@ -110,7 +110,8 @@ public sealed class ConsoleMenu
             return;
         }
 
-        _output.WriteLine($"Додано {result.Value!.Code} × {result.Value.Quantity}.");
+        _output.WriteLine($"Додано {result.Value!.Code} × {result.Value.Quantity}. "
+            + $"Вартість заявки: {_services.Workflow.TotalOf(ticketId):0.00} грн.");
         _logger.LogInformation("UC-03: до заявки {TicketId} додано {Code}", ticketId, result.Value.Code);
     }
 
@@ -133,11 +134,16 @@ public sealed class ConsoleMenu
     {
         _logger.LogInformation("UC-06: оплата й видача");
         int ticketId = AskNumber("Номер заявки: ");
-        _output.WriteLine($"До сплати: {_services.Workflow.TotalOf(ticketId):0.00} грн.");
+        decimal total = _services.Workflow.TotalOf(ticketId);
+        _output.WriteLine($"До сплати: {total:0.00} грн.");
         decimal amount = AskAmount("Сума оплати, грн: ");
         _services.Workflow.Pay(ticketId, amount);
         _output.WriteLine($"Заявку № {ticketId} оплачено, пристрій видано.");
         _logger.LogInformation("UC-06: заявку {TicketId} видано", ticketId);
+        if (amount > total)
+        {
+            _logger.LogWarning("UC-06: переплата {Overpay:0.00} грн за заявкою {TicketId}", amount - total, ticketId);
+        }
     }
 
     private void Find()
@@ -149,9 +155,26 @@ public sealed class ConsoleMenu
 
     private void Overdue()
     {
-        DateOnly today = _services.Clock.Today;
-        _output.WriteLine($"Прострочені заявки на {today:dd.MM.yyyy}:");
-        Print(_services.Query.Overdue(today));
+        DateOnly reportDate = AskDate("Дата звіту дд.мм.рррр (Enter — сьогодні): ");
+        IReadOnlyList<RepairTicket> tickets = _services.Query.Overdue(reportDate);
+        _logger.LogInformation("UC-05: звіт на {ReportDate:dd.MM.yyyy}, заявок {Count}", reportDate, tickets.Count);
+        if (tickets.Count == 0)
+        {
+            _output.WriteLine("Прострочених заявок немає.");
+            return;
+        }
+
+        _output.WriteLine($"Прострочені заявки на {reportDate:dd.MM.yyyy}");
+        _output.WriteLine("   № | Клієнт | Пристрій             | Пріор.  | Дедлайн    | Днів");
+        foreach (RepairTicket t in tickets)
+        {
+            int days = reportDate.DayNumber - t.Deadline.DayNumber;
+            _output.WriteLine(string.Create(
+                CultureInfo.InvariantCulture,
+                $"{t.Id,4} | {t.CustomerId,6} | {t.DeviceModel,-20} | {t.Priority,-7} | {t.Deadline:dd.MM.yyyy} | {days,4}"));
+        }
+
+        _output.WriteLine($"Разом прострочених заявок: {tickets.Count}");
     }
 
     private void Print(IReadOnlyList<RepairTicket> tickets)
@@ -162,12 +185,12 @@ public sealed class ConsoleMenu
             return;
         }
 
-        _output.WriteLine("   № | Пристрій             | Пріор.  | Стан      | Дедлайн");
+        _output.WriteLine("   № | Клієнт | Пристрій             | Пріор.  | Стан      | Дедлайн");
         foreach (RepairTicket t in tickets)
         {
             _output.WriteLine(string.Create(
                 CultureInfo.InvariantCulture,
-                $"{t.Id,4} | {t.DeviceModel,-20} | {t.Priority,-7} | {t.Status,-9} | {t.Deadline:dd.MM.yyyy}"));
+                $"{t.Id,4} | {t.CustomerId,6} | {t.DeviceModel,-20} | {t.Priority,-7} | {t.Status,-9} | {t.Deadline:dd.MM.yyyy}"));
         }
     }
 
@@ -197,6 +220,25 @@ public sealed class ConsoleMenu
             }
 
             _output.WriteLine("Введіть ціле число, більше за нуль.");
+        }
+    }
+
+    private DateOnly AskDate(string prompt)
+    {
+        while (true)
+        {
+            string text = Ask(prompt).Trim();
+            if (text.Length == 0)
+            {
+                return _services.Clock.Today;
+            }
+
+            if (DateOnly.TryParseExact(text, "dd.MM.yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateOnly date))
+            {
+                return date;
+            }
+
+            _output.WriteLine("Введіть дату у форматі дд.мм.рррр, наприклад 25.11.2026.");
         }
     }
 
