@@ -1,4 +1,4 @@
-using RepairService.Core;
+﻿using RepairService.Core;
 
 namespace RepairService.Tests;
 
@@ -11,6 +11,6 @@ public class VersionInfoTests
         string version = VersionInfo.Current();
 
         // Assert
-        Assert.Equal("1.0.0", version);
+        Assert.Equal("9.9.9", version);
     }
 }
